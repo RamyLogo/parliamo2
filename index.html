@@ -18,6 +18,23 @@ body.game-running #gameVerify {display:inline-flex !important}
 body.game-running.game-solution-shown #gameVerify {display:none !important}
 body.game-running .game-solution[hidden] {display:none !important}
 body.game-running #gameNext {margin-left:10px;background:#6942a1;color:white;border-radius:10px;padding:10px 16px;font-weight:bold}
+
+/* gioCAA: scena affiancata al punteggio, anche su smartphone */
+.game-stage-compact{display:none;grid-template-columns:minmax(0, 1.8fr) minmax(130px,1fr);align-items:center;gap:10px;margin:6px 0 3px}
+body.game-running .game-stage-compact{display:grid}
+.game-scene-slot{min-width:0;display:flex;align-items:center;justify-content:center}
+body.game-active .game-scene-slot #sceneDisplay{float:none!important;position:relative!important;display:block!important;width:100%!important;max-width:100%!important;margin:0!important;min-height:0!important;box-sizing:border-box;padding:6px!important;z-index:1!important}
+body.game-active .game-scene-slot #sceneDisplayImg{max-height:185px!important;width:auto!important;max-width:100%!important;object-fit:contain!important}
+.game-score-side{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px}
+body.game-running .game-abacus{margin:0!important;gap:12px!important;justify-content:center!important}
+body.game-running .abacus-rod{height:88px!important;width:34px!important}
+body.game-running .abacus-col{font-size:10px!important;gap:3px!important;white-space:nowrap}
+#gameVerifyCompact{background:#2769bd;color:#fff;border:0;border-radius:8px;font-size:13px;font-weight:700;padding:7px 11px;cursor:pointer}
+#gameVerifyCompact:disabled{opacity:.45;cursor:default}
+body.game-running .game-controls{display:none!important}
+body.game-running .game-panel{padding:5px!important;margin:4px!important}
+.game-help{display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:0!important;line-height:1!important;text-align:center!important;box-sizing:border-box!important}
+@media(max-width:550px){.game-stage-compact{grid-template-columns:minmax(0, 1.5fr) minmax(112px,1fr);gap:5px}.game-score-side{gap:4px}body.game-running .game-abacus{gap:5px!important}body.game-running .abacus-col{font-size:9px!important}body.game-active .game-scene-slot #sceneDisplayImg{max-height:135px!important}#gameVerifyCompact{font-size:12px;padding:6px 8px}}
 </style></head><body>
 <div class="top">
  <div class="topbar">
@@ -67,7 +84,7 @@ body.game-running #gameNext {margin-left:10px;background:#6942a1;color:white;bor
  <div class="game-controls"><label for="gameExercise">SCEGLI ESERCIZIO</label><select id="gameExercise" aria-label="Scegli esercizio"></select><button onclick="manageGameExercises()">＋ CREA ESERCIZIO</button><button id="gamePlay" onclick="nextGame()">GIOCA</button><button id="gameVerify" onclick="gameCheck()">VERIFICA</button></div>
  <p id="gameFeedback" aria-live="polite"></p>
  <div id="gameSolution" class="game-solution" hidden><div class="game-solution-title">✦ SOLUZIONE DI gioCAA</div><div id="gameSolutionTokens" class="game-solution-tokens"></div><button onclick="speakGameSolution()">🔊 ASCOLTA SOLUZIONE</button><button id="gameNext" onclick="nextGame()">AVANTI →</button></div>
- <div class="game-abacus" aria-label="Punteggio dei tentativi"><div class="abacus-col"><div class="abacus-rod" id="gameGreenRod"></div><b>CORRETTE <span id="gameGreenCount">0</span></b></div><div class="abacus-col"><div class="abacus-rod" id="gameRedRod"></div><b>ERRATE <span id="gameRedCount">0</span></b></div></div>
+ <div id="gameStage" class="game-stage-compact"><div id="gameSceneSlot" class="game-scene-slot"></div><div class="game-score-side"><div class="game-abacus" aria-label="Punteggio dei tentativi"><div class="abacus-col"><div class="abacus-rod" id="gameGreenRod"></div><b>CORRETTE <span id="gameGreenCount">0</span></b></div><div class="abacus-col"><div class="abacus-rod" id="gameRedRod"></div><b>ERRATE <span id="gameRedCount">0</span></b></div></div><button id="gameVerifyCompact" type="button" onclick="gameCheck()">VERIFICA</button></div></div>
  </section>
  <div id="sentence" class="sentence"><span class="small">Tocca i simboli per costruire la frase.</span></div>
 <div id="sceneDisplay" class="scene-display" style="display:none">

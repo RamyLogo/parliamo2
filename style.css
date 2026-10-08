@@ -493,3 +493,24 @@ body.scene-folder .scene-add-menu.open{display:grid!important;gap:6px;margin:0 0
 .game-abacus{display:flex;justify-content:center;gap:30px;margin:12px auto 4px}.abacus-col{display:flex;align-items:center;flex-direction:column;font-size:12px;gap:5px}.abacus-rod{width:44px;height:124px;border-bottom:7px solid #997454;background:linear-gradient(to right,transparent 47%,#997454 47%,#997454 53%,transparent 53%);display:flex;flex-direction:column-reverse;align-items:center;gap:1px;padding-bottom:3px;box-sizing:border-box}.abacus-ball{height:9px;width:26px;border-radius:50%;display:block;flex-shrink:0}.abacus-ball.green{background:#28a65b}.abacus-ball.red{background:#df4747}
 .game-active #sentence .token{position:relative}.token-action{position:absolute;top:-9px;right:-7px;z-index:5}.token-status{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;font-size:19px;font-weight:900;color:white;border:2px solid white}.token-status.correct{background:#29a657}.token-status.incorrect{background:#e04444;cursor:pointer}.token-status.move{background:#e0a621}.token-arrows{display:flex;gap:3px}.token-arrows button{border:0;background:#efcf66;border-radius:4px;padding:5px;font-size:14px}
 .scene-hide{margin-left:10px;border:0;background:#c83e46;color:white;padding:7px;border-radius:7px}.scene-folder-action{display:none;margin:5px;padding:8px;border-radius:7px;background:#e4d7fa;border:1px solid #ab94c5}.scene-folder #sceneNewFolder{display:inline-block}.scene-folder-symbol{position:relative;z-index:2;font-size:36px;margin-top:20px}.scene-folder-edit{display:flex;justify-content:center;gap:7px}.scene-folder-edit button,.scene-move-folder{border:1px solid #aaa;border-radius:6px;background:white;padding:4px;font-size:12px}.scene-subfolder{cursor:pointer}
+
+/* v38: impostazioni interamente scorrevoli su smartphone */
+@media (max-width: 759px) {
+  #addMenu.popover {
+    position: fixed !important;
+    top: 8px !important;
+    bottom: 8px !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    box-sizing: border-box !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    z-index: 2147483000 !important;
+    padding-bottom: max(24px, env(safe-area-inset-bottom)) !important;
+  }
+}

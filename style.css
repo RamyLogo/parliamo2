@@ -1,0 +1,481 @@
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#1d1d1f}
+body{margin:0;background:#f4f5f7}.top{position:sticky;top:0;background:#fff;padding:10px;box-shadow:0 1px 8px #0002;z-index:3}
+.sentence{min-height:94px;display:flex;gap:8px;overflow:auto;align-items:center}.chip,.card{background:#fff;border:1px solid #d8dbe0;border-radius:12px;text-align:center}
+.chip{min-width:80px;padding:5px}.chip img,.card img{width:72px;height:72px;object-fit:contain}
+.controls,.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}button,input{font:inherit;padding:10px;border-radius:10px;border:1px solid #bbb}
+button{background:#fff}.primary{background:#1769e0;color:#fff;border:0}
+main{padding:12px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}.card{padding:10px;cursor:pointer;position:relative}
+.card b{display:block;margin-top:4px}.folder{font-size:52px;padding-top:10px}.edit{position:absolute;right:4px;top:4px;padding:3px 7px;background:#fff}
+.modal{position:fixed;inset:0;background:#0008;display:none;z-index:5}.panel{background:#f7f7f7;position:absolute;inset:4%;border-radius:16px;padding:14px;overflow:auto}
+.searchbar{display:flex;gap:8px}.searchbar input{flex:1}.small{font-size:12px;color:#666}.close{float:right}.crumb{font-weight:600;margin:8px 0}
+
+.topbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.topbar button{min-width:58px}
+.sentence{background:#bfe8ff!important;border:2px solid #72bde8!important;min-height:92px}
+.sentence .token{cursor:pointer}
+.folder-shell{position:relative;width:100%;height:110px;display:flex;align-items:center;justify-content:center}
+.folder-shape{position:absolute;width:112px;height:78px;bottom:7px;background:#f3b928;border:3px solid #bd8b00;border-radius:8px 8px 12px 12px}
+.folder-tab{position:absolute;width:55px;height:20px;left:16px;top:13px;background:#f3b928;border:3px solid #bd8b00;border-bottom:0;border-radius:8px 8px 0 0}
+.folder-shell img{position:relative;z-index:2;width:72px!important;height:58px!important;object-fit:contain;background:white;border-radius:6px;margin-top:18px}
+.popover{position:absolute;z-index:30;background:white;border:1px solid #bbb;border-radius:12px;padding:12px;box-shadow:0 6px 24px #0003;display:none;max-width:320px}
+#addMenu{left:10px;top:60px} #voiceMenu{left:75px;top:60px}
+.popover button{display:block;width:100%;margin:5px 0;text-align:left}
+.voice-row{display:grid;gap:6px;margin-bottom:8px}
+
+/* v7: on phones only the sentence strip becomes compact */
+@media (max-width:600px){
+  .sentence{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    gap:3px!important;
+    overflow-x:hidden!important;
+    align-items:flex-start!important;
+    padding:5px!important;
+  }
+  .sentence .token{
+    flex:1 1 0!important;
+    min-width:0!important;
+    max-width:72px!important;
+    padding:2px!important;
+    font-size:clamp(8px,2.5vw,12px)!important;
+  }
+  .sentence .token img{
+    width:100%!important;
+    height:auto!important;
+    max-height:54px!important;
+    object-fit:contain!important;
+  }
+  .sentence .token div{
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+}
+
+.btn-back{background:#ffd83d!important;color:#222!important;border-color:#c9a500!important}
+.btn-clear{background:#d93636!important;color:white!important;border-color:#b51f1f!important}
+.btn-speak{background:#72c98b!important;color:#173b22!important;border-color:#4eaa69!important}
+
+#sentence.sentence{
+ display:flex!important;
+ width:100%!important;
+ box-sizing:border-box!important;
+ min-height:96px!important;
+ margin:8px 0 12px!important;
+ padding:8px!important;
+ background:#bfe8ff!important;
+ border:2px solid #72bde8!important;
+ border-radius:12px!important;
+ gap:6px!important;
+ align-items:flex-start!important;
+ overflow-x:auto!important;
+}
+
+/* v11 */
+.btn-back,.btn-clear,.btn-speak{
+  width:82px!important;
+  min-width:82px!important;
+  height:58px!important;
+  box-sizing:border-box!important;
+  padding:5px 4px!important;
+}
+/* More visible cards in the lower pictogram/folder area */
+.grid .card, #board .card{
+  background:#fff!important;
+  border:2px solid #8b9aa5!important;
+  border-radius:14px!important;
+  box-shadow:0 2px 7px rgba(0,0,0,.18)!important;
+  padding:7px!important;
+}
+.grid .card:hover, #board .card:hover{
+  border-color:#4f6f82!important;
+}
+
+/* v12: lower cards more compact, larger image, label closer to bottom */
+.grid .card, #board .card{
+  min-height:0!important;
+  height:auto!important;
+  padding:6px 6px 4px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:flex-start!important;
+}
+.grid .card > img, #board .card > img{
+  width:100%!important;
+  height:105px!important;
+  object-fit:contain!important;
+  margin:0 auto 3px!important;
+}
+.grid .card > b, #board .card > b{
+  margin-top:auto!important;
+  padding-top:2px!important;
+  line-height:1.15!important;
+}
+/* folder cover: larger visual but less empty vertical space */
+.folder-shell{
+  height:100px!important;
+  margin:0!important;
+}
+.folder-shell .folder-shape{
+  width:118px!important;
+  height:76px!important;
+  bottom:3px!important;
+}
+.folder-shell .folder-tab{
+  top:8px!important;
+}
+.folder-shell img{
+  width:82px!important;
+  height:64px!important;
+  margin-top:13px!important;
+}
+
+/* v13: top controls */
+.topbar button{
+  font-size:27px!important;
+  line-height:1!important;
+}
+.topbar button small{
+  display:block!important;
+  margin-top:5px!important;
+  font-size:12px!important;
+  line-height:1.05!important;
+  text-transform:uppercase!important;
+  font-weight:700!important;
+  letter-spacing:.3px!important;
+}
+
+/* v15: edit pencil beside lower label */
+.label-edit{
+ display:flex!important;
+ align-items:center!important;
+ justify-content:center!important;
+ gap:5px!important;
+ width:100%!important;
+ margin-top:auto!important;
+ min-height:24px!important;
+}
+.label-edit b{margin:0!important;padding:0!important}
+.edit-bottom{
+ position:static!important;
+ width:22px!important;
+ height:22px!important;
+ min-width:22px!important;
+ padding:0!important;
+ margin:0!important;
+ border-radius:6px!important;
+ font-size:13px!important;
+ line-height:20px!important;
+ flex:0 0 22px!important;
+}
+
+/* v16 editing mode */
+.edit-bottom{display:none!important}
+body.edit-mode .edit-bottom{display:inline-flex!important;align-items:center!important;justify-content:center!important}
+.delete-bottom{
+ display:none;
+ width:22px!important;height:22px!important;min-width:22px!important;
+ padding:0!important;margin:0!important;border-radius:6px!important;
+ font-size:13px!important;line-height:20px!important;
+ background:#d93636!important;color:#fff!important;border:1px solid #b51f1f!important;
+}
+body.edit-mode .delete-bottom{display:inline-flex!important;align-items:center!important;justify-content:center!important}
+body.edit-mode #board .card{cursor:grab!important}
+body.edit-mode #board .card.dragging{opacity:.45!important}
+body.edit-mode #board .card.drag-over{outline:3px solid #72bde8!important}
+
+/* v17 settings */
+.settings-btn{
+ width:58px!important;
+ min-width:58px!important;
+ height:58px!important;
+ padding:0!important;
+ font-size:32px!important;
+ line-height:1!important;
+ display:flex!important;
+ align-items:center!important;
+ justify-content:center!important;
+}
+.voice-settings{
+ border-top:1px solid #ccd5da;
+ border-bottom:1px solid #ccd5da;
+ margin:8px 0;
+ padding:9px 2px;
+ display:grid;
+ gap:6px;
+}
+.voice-settings select{width:100%;max-width:280px}
+.voice-settings input[type="range"]{width:100%}
+
+/* v19 SCENE */
+.scene-display{
+ position:relative;
+ width:100%;
+ box-sizing:border-box;
+ margin:0 0 12px;
+ padding:10px;
+ min-height:180px;
+ background:#fff;
+ border:2px solid #8b9aa5;
+ border-radius:14px;
+ text-align:center;
+}
+.scene-display img{
+ display:block;
+ width:auto;
+ max-width:100%;
+ height:auto;
+ max-height:360px;
+ object-fit:contain;
+ margin:0 auto;
+}
+.scene-display #sceneDisplayLabel{
+ margin-top:6px;
+ font-size:18px;
+ font-weight:700;
+}
+.scene-close{
+ position:absolute;
+ right:8px;
+ top:8px;
+ z-index:3;
+ width:34px!important;
+ height:34px!important;
+ min-width:34px!important;
+ padding:0!important;
+ border-radius:50%!important;
+ background:#d93636!important;
+ color:white!important;
+ font-size:18px!important;
+ font-weight:700!important;
+}
+body.scene-folder #board .card{cursor:pointer}
+
+/* v20: cartella SCENE blu */
+#board .scenes-folder-card{
+ background:#bfe8ff!important;
+ border-color:#72bde8!important;
+}
+
+/* v21: SCENE folder blue */
+#board .scenes-folder-card{
+ background:#e8f6ff!important;
+ border-color:#72bde8!important;
+}
+#board .scenes-folder-card .folder-shape{
+ background:#59aee8!important;
+ border-color:#2f7fb5!important;
+}
+#board .scenes-folder-card .folder-tab{
+ background:#59aee8!important;
+ border-color:#2f7fb5!important;
+}
+
+/* v27 profile + scenes */
+.profile-settings{
+ border-top:1px solid #ccd5da;
+ margin-top:8px;
+ padding-top:9px;
+ display:grid;
+ gap:6px;
+}
+.profile-settings input[type="text"]{width:100%;box-sizing:border-box;padding:7px}
+.add-scene-btn,.scene-add-menu{display:none!important}
+body.scene-folder .add-scene-btn{display:block!important;margin:6px 0 10px!important}
+body.scene-folder .scene-add-menu.open{display:grid!important;gap:6px;margin:0 0 10px!important}
+
+/* v28: scene compatte, nome su richiesta, icone coerenti */
+.btn-speak .speak-icon{width:30px;height:30px;object-fit:contain;display:block;margin:0 auto 1px;mix-blend-mode:multiply}
+.scene-tools{position:absolute;left:8px;top:8px;z-index:4;display:flex;gap:6px}
+.scene-tool{width:38px!important;height:38px!important;min-width:38px!important;padding:4px!important;border-radius:9px!important;background:#fff!important;border:1px solid #9aa8b1!important;display:flex!important;align-items:center;justify-content:center}
+.scene-tool img{width:28px!important;height:28px!important;max-width:28px!important;max-height:28px!important;object-fit:contain!important;margin:0!important}
+.scene-display{max-width:300px;min-height:0;padding:8px;margin:0 12px 12px 0}
+.scene-display img#sceneDisplayImg{max-height:245px}
+.scene-display #sceneDisplayLabel[hidden]{display:none!important}
+.scene-display #sceneDisplayLabel{padding:5px 70px 1px 70px;margin-top:4px}
+.scene-card-actions{min-height:28px}
+@media (min-width:760px){
+ body.scene-open #sceneDisplay{display:block!important;float:left;width:280px;margin-left:10px;margin-right:12px}
+ body.scene-open main{overflow:hidden;min-width:0}
+}
+@media (max-width:759px){
+ .scene-display{max-width:100%;width:auto;margin:0 8px 10px}
+ .scene-display img#sceneDisplayImg{max-height:210px}
+}
+
+/* v31: PARLA compatto e lettura sequenziale */
+.btn-speak{
+ display:flex!important;
+ flex-direction:row!important;
+ align-items:center!important;
+ justify-content:center!important;
+ gap:7px!important;
+}
+.btn-speak .speak-icon{
+ width:27px!important;height:27px!important;
+ margin:0!important;display:block!important;flex:0 0 auto;
+}
+.btn-speak .speak-label{
+ display:inline-block;font-size:15px;font-weight:700;line-height:1;
+}
+#sentence .token{
+ transition:box-shadow .12s ease, border-color .12s ease, transform .12s ease, background .12s ease;
+}
+#sentence .token.speaking{
+ border:3px solid #f0b429!important;
+ background:#fff4bf!important;
+ box-shadow:0 0 0 4px rgba(240,180,41,.24)!important;
+ transform:scale(1.04);
+}
+
+/* v32: PARLA come gli altri comandi */
+.btn-speak{
+ display:flex!important;
+ flex-direction:column!important;
+ align-items:center!important;
+ justify-content:center!important;
+ gap:2px!important;
+ padding:5px 9px!important;
+}
+.btn-speak .speak-icon{width:27px!important;height:27px!important;margin:0!important}
+.btn-speak .speak-label{
+ display:block!important;
+ font-size:11px!important;
+ font-weight:800!important;
+ line-height:1!important;
+ text-transform:uppercase!important;
+}
+
+/* La scena visualizzata non dipende dalla visibilità della cartella Scene */
+#sceneStage,#sceneDisplay,.scene-stage,.scene-display{
+ display:block;
+}
+
+/* v33: il pannello Impostazioni deve coprire completamente i comandi della scena */
+.settings-panel,.settings-drawer,#settingsPanel,#settingsDrawer,.drawer,.side-panel{
+ z-index:10000!important;
+}
+#sceneControls,.scene-controls,.scene-close,.scene-stage,.scene-display,#sceneStage,#sceneDisplay{
+ z-index:100!important;
+}
+
+/* v34: IMPOSTAZIONI DAVANTI alla scena */
+#settingsPanel,#settingsDrawer,#settings,.settings-panel,.settings-drawer,.settings,.drawer,.side-panel,
+[role="dialog"]{
+ position:relative;
+ z-index:2147483000!important;
+ isolation:isolate;
+}
+#sceneControls,.scene-controls,.scene-close,#sceneStage,#sceneDisplay,.scene-stage,.scene-display{
+ z-index:1!important;
+}
+
+/* v35: scorrimento verticale della tendina Impostazioni */
+.panel{
+ max-height:calc(100vh - 16px)!important;
+ overflow-y:auto!important;
+ overflow-x:hidden!important;
+ -webkit-overflow-scrolling:touch;
+ scrollbar-gutter:stable;
+}
+.panel::-webkit-scrollbar{width:12px}
+.panel::-webkit-scrollbar-track{background:#f1f1f1;border-radius:8px}
+.panel::-webkit-scrollbar-thumb{background:#9aa8ad;border-radius:8px;border:2px solid #f1f1f1}
+.panel::-webkit-scrollbar-thumb:hover{background:#7f8e94}
+
+/* v36: barra di scorrimento NELLA tendina Impostazioni */
+#addMenu.popover{
+ max-height:calc(100vh - 90px)!important;
+ overflow-y:scroll!important;
+ overflow-x:hidden!important;
+ -webkit-overflow-scrolling:touch;
+ scrollbar-gutter:stable;
+}
+#addMenu.popover::-webkit-scrollbar{width:12px}
+#addMenu.popover::-webkit-scrollbar-track{background:#f1f1f1;border-radius:8px}
+#addMenu.popover::-webkit-scrollbar-thumb{background:#9aa8ad;border-radius:8px;border:2px solid #f1f1f1}
+#addMenu.popover::-webkit-scrollbar-thumb:hover{background:#7f8e94}
+
+/* v37: ricerca pittogrammi ripristinata */
+#modal.modal{z-index:2147483600!important}
+#results.grid{max-height:55vh;overflow-y:auto}
+#results .arasaac-result{cursor:pointer}
+
+/* v39: logo nella barra e cartella Scene sempre per prima */
+.app-mini-logo{
+ width:86px;height:52px;object-fit:contain;object-position:center;
+ flex:0 0 auto;background:#fff;border-radius:8px;padding:2px;
+}
+@media(max-width:520px){
+ .app-mini-logo{width:62px;height:44px}
+}
+
+/* v40: informazioni integrate nell'app */
+#infoModal{z-index:2147483640!important}
+#infoModal .info-panel{
+ max-width:760px!important;
+ max-height:88vh!important;
+ overflow-y:auto!important;
+ padding:20px!important;
+}
+#infoModal h2{margin-top:4px;color:#0b477f}
+#infoModal h3{color:#0b477f;margin-top:22px}
+#infoModal .info-box{
+ background:#f5f8fa;border:1px solid #ccd7dd;border-radius:12px;padding:12px 15px;
+}
+#infoModal a{color:#075ea8}
+.profile-settings{margin-top:14px!important}
+
+/* v41: logo e testo Informazioni aggiornati */
+#infoModal .info-logo{
+ display:block;width:min(330px,72vw);height:auto;object-fit:contain;
+ margin:0 auto 8px;
+}
+#infoModal .info-author{
+ text-align:center;margin:2px 0 18px;font-size:14px;
+}
+
+/* v42: evidenze nelle istruzioni */
+#infoModal .info-emphasis{
+ color:#23629d;font-weight:700;
+}
+#infoModal .info-emphasis-inline{
+ color:#23629d;
+}
+
+/* v43: istruzioni uniformi, nere, logo in alto */
+#infoModal #infoScroll,
+#infoModal #infoScroll p,
+#infoModal #infoScroll h3,
+#infoModal #infoScroll b,
+#infoModal #infoScroll span{
+ color:#111!important;
+ font-family:Arial,Helvetica,sans-serif!important;
+}
+#infoModal #infoScroll p{font-size:16px!important;line-height:1.45!important;font-weight:400!important}
+#infoModal #infoScroll h3{font-size:18px!important;line-height:1.25!important;font-weight:700!important;margin:20px 0 5px!important}
+#infoModal .info-logo{
+ display:block!important;width:min(330px,75vw)!important;height:auto!important;
+ margin:0 auto 22px!important;
+}
+#infoModal .free-note{text-align:center!important;margin:22px auto 6px!important}
+#infoModal .credits-box{color:#111!important}
+
+/* v45: nome scena usa tutta la larghezza disponibile */
+#sceneDisplayLabel{
+ display:block;
+ box-sizing:border-box;
+ width:100%!important;
+ max-width:none!important;
+ padding:5px 10px 3px!important;
+ margin:4px 0 0!important;
+ text-align:center!important;
+ white-space:normal;
+ overflow-wrap:normal;
+ word-break:normal;
+ line-height:1.25;
+}
+#sceneDisplayLabel[hidden]{display:none!important}
+
+/* gioCAA */
+.game-toggle{background:#8052b8;color:white;border:0;border-radius:12px;padding:10px;font-weight:bold}.game-panel{background:#f5efff;border:2px solid #bba1e6;border-radius:14px;margin:8px;padding:12px}.game-panel[hidden]{display:none!important}.game-brand{font-weight:900;font-size:26px;color:#6431a4}.game-brand span{color:#158a90}.game-controls{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.game-controls button,.game-controls select{border-radius:8px;padding:9px;border:1px solid #9d87c5;background:white}.game-controls button{background:#8052b8;color:white;font-weight:bold}.game-green{outline:4px solid #2eb653}.game-yellow{outline:4px solid #e9b72c}.game-red{outline:4px solid #e54d4d}.game-move{display:flex;gap:3px;justify-content:center}.game-move button{padding:3px 7px;font-size:15px}.game-scene-toggle{position:relative;z-index:3;background:#e4d7fa;border-radius:8px;padding:5px;margin:4px}.game-active #sceneDisplay .scene-close{display:none}

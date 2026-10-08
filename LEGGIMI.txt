@@ -1,0 +1,3 @@
+PARLIAMO v45 - versione web con icona approvata.
+Pubblicazione GitHub Pages: Settings > Pages > Deploy from a branch > main / (root).
+Non è una PWA.

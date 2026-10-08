@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="it"><head>
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#1386d3">
+
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>PARLIAMO by Ramy</title>
+<link rel="stylesheet" href="style.css"></head><body>
+<div class="top">
+ <div class="topbar">
+<img class="app-mini-logo" src="assets/embedded-1.png" alt="PARLIAMO by Ramy" title="PARLIAMO by Ramy">
+<button id="gameToggle" class="game-toggle" onclick="toggleGame()">▶ gioCAA</button>
+<button class="settings-btn" title="Impostazioni" aria-label="Impostazioni" onclick="toggleMenu('addMenu')">⚙️</button>
+<button class="btn-back" onclick="undo()">↩︎<br><small>Indietro</small></button>
+<button class="btn-clear" onclick="clearSentence()">✕<br><small>Cancella</small></button>
+<button class="primary btn-speak" onclick="speakSentence()"><img class="speak-icon" src="assets/embedded-2.png" alt=""><span class="speak-label">PARLA</span></button>
+</div>
+<div id="addMenu" class="popover">
+<button onclick="openInfo();hideMenus()">ⓘ INFORMAZIONI E ISTRUZIONI</button>
+<button onclick="openInfo('crediti-arasaac');hideMenus()">© CREDITI ARASAAC</button>
+
+<div class="menu-section voice-settings">
+<label for="voiceSelect"><b>VOCE</b></label>
+<select id="voiceSelect" onchange="saveVoice()"></select>
+<label for="rate"><b>VELOCITÀ</b></label>
+<input id="rate" type="range" min="0.6" max="1.4" step="0.1" value="1" onchange="saveVoice()">
+</div>
+
+<button id="editModeBtn" onclick="toggleEditMode();hideMenus()">✎ MODIFICA</button>
+<button id="sceneToggleBtn" onclick="toggleScenes()">▣ MOSTRA CARTELLA SCENE</button>
+<button id="caseToggleBtn" onclick="toggleLabelCase()">Aa minuscolo</button>
+
+<button onclick="newFolder();hideMenus()">📁 Nuova cartella</button>
+<button onclick="chooseFolderImage();hideMenus()">🖼 Immagine cartella</button>
+<button onclick="searchFolderCover();hideMenus()">🔎 Pittogramma cartella</button>
+<button onclick="chooseLocalPic(false);hideMenus()">🖼 Immagine dal dispositivo</button>
+<button onclick="chooseLocalPic(true);hideMenus()">📷 Scatta foto</button>
+<button onclick="openSearch();hideMenus()">🔎 Pittogramma ARASAAC</button>
+
+<div class="menu-section profile-settings">
+  <b>PROFILO LOCALE</b>
+  <input id="profileName" type="text" placeholder="Nome profilo" value="UTENTE">
+  <button onclick="saveProfileName()">SALVA NOME PROFILO</button>
+  <button onclick="exportProfile()">⇧ ESPORTA PROFILO</button>
+  <button onclick="document.getElementById('profileImport').click()">⇩ IMPORTA PROFILO</button>
+  <input id="profileImport" type="file" accept=".json,.parliamo,application/json,application/octet-stream" style="display:none" onchange="importProfileFile(event)">
+</div>
+</div>
+
+</div>
+<section id="gamePanel" class="game-panel" hidden><div class="game-brand">gio<span>CAA</span></div><div class="game-controls"><select id="gameExercise" aria-label="Esercizio"></select><button onclick="manageGameExercises()">＋ CREA ESERCIZIO</button><button onclick="nextGame()">ESTRAI SCENA</button><button id="gameVerify" onclick="gameCheck()">VERIFICA</button></div><p id="gameFeedback" aria-live="polite"></p><p id="gameSolution" hidden></p><strong id="gameScore">Punti: 0 · Scene completate: 0</strong></section>
+<div id="sentence" class="sentence"><span class="small">Tocca i simboli per costruire la frase.</span></div>
+<div id="sceneDisplay" class="scene-display" style="display:none">
+<button class="scene-close" onclick="closeScene()" aria-label="Chiudi scena">✕</button>
+<div class="scene-tools">
+<button class="scene-tool" onclick="toggleSceneName(event)" aria-label="Mostra o nascondi nome"><img src="assets/embedded-3.png" alt=""></button>
+<button class="scene-tool" onclick="speakSceneName(event)" aria-label="Ascolta nome"><img src="assets/embedded-4.png" alt=""></button>
+</div>
+<img id="sceneDisplayImg" alt="">
+<div id="sceneDisplayLabel" hidden></div>
+</div>
+<main>
+ <div class="toolbar"><button id="backBtn" onclick="goBack()" style="display:none">← Indietro</button>
+
+<input id="folderImageInput" type="file" accept="image/*" style="display:none" onchange="setFolderImage(event)">
+
+<input id="localPicInput" type="file" accept="image/*" style="display:none" onchange="addLocalPic(event)">
+
+<input id="cameraInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="addLocalPic(event)">
+</div>
+ <div id="crumb" class="crumb"></div><button id="addSceneBtn" class="add-scene-btn" onclick="openSceneAddMenu()">＋ AGGIUNGI SCENA</button>
+<div id="sceneAddMenu" class="scene-add-menu" style="display:none">
+ <button onclick="sceneAddMode='arasaac';searchSceneArasaac()">PITTOGRAMMA ARASAAC</button>
+ <button onclick="document.getElementById('sceneImageInput').click()">IMMAGINE DAL DISPOSITIVO</button>
+ <input id="sceneImageInput" type="file" accept="image/*" style="display:none" onchange="addSceneImage(event)">
+</div>
+<div id="board" class="grid"></div>
+</main>
+<div id="infoModal" class="modal info-modal">
+<div class="panel info-panel">
+<button class="close" onclick="closeInfo()">✕</button>
+<div id="infoScroll">
+<img class="info-logo" src="assets/embedded-5.png" alt="PARLIAMO by Ramy">
+
+<p><b>PARLIAMO</b> è uno strumento gratuito di Comunicazione Aumentativa e Alternativa (CAA) creato dalla logopedista <b>Ramona Nicastro</b> per costruire messaggi attraverso simboli, immagini e scene.</p>
+
+<h3>Personalizzazione dei contenuti</h3>
+<p>È possibile personalizzare i contenuti aggiungendo pittogrammi, immagini salvate sul dispositivo o foto.</p>
+
+<h3>Modifica</h3>
+<p>Puoi modificare il nome associato alle immagini o alle cartelle e puoi spostarle. Dopo aver apportato le modifiche torna nelle Impostazioni e clicca <b>FINE MODIFICA</b>.</p>
+
+<h3>Pittogrammi</h3>
+<p>Tocca un simbolo per inserirlo nella frase. Usa <b>PARLA</b> per ascoltare la frase un elemento alla volta.<br>
+Puoi cambiare voce scegliendo fra quelle presenti nel dispositivo e modificare la velocità tramite l’apposito comando.</p>
+
+<h3>Cartelle</h3>
+<p>Apri una cartella per visualizzarne i contenuti. Puoi creare nuove cartelle e renderle riconoscibili scegliendo un’immagine o un pittogramma.</p>
+
+<h3>Scene</h3>
+<p>È possibile mostrare un’immagine che rappresenta la frase, precedentemente creata o caricata. Dalle Impostazioni scegli <b>MOSTRA CARTELLA SCENE</b>.<br>
+Dopo aver scelto la scena è possibile nascondere la cartella Scene dalle Impostazioni. Una scena aperta può essere chiusa con X; il nome può essere mostrato o pronunciato con gli appositi pulsanti.</p>
+
+<h3>Maiuscolo/minuscolo</h3>
+<p>Il comando nelle Impostazioni modifica la visualizzazione di tutte le scritte, senza cambiare la pronuncia.</p>
+
+<h3>Profilo</h3>
+<p>Le personalizzazioni vengono conservate localmente sul dispositivo. È possibile esportare e importare il profilo.</p>
+
+<h3 id="crediti-arasaac">Crediti ARASAAC</h3>
+<div class="info-box credits-box">
+<p>I simboli pittografici ARASAAC utilizzati sono di proprietà del <b>Governo di Aragona</b> e sono stati creati da <b>Sergio Palao</b> per <b>ARASAAC</b>, che li distribuisce sotto licenza <b>Creative Commons BY-NC-SA</b>.</p>
+<p><a href="https://arasaac.org/" target="_blank" rel="noopener">ARASAAC – Centro Aragonese per la Comunicazione Aumentativa e Alternativa</a></p>
+<p><a href="https://aulaabierta.arasaac.org/it/condizioni-duso" target="_blank" rel="noopener">Condizioni d'uso ARASAAC</a></p>
+</div>
+<p class="free-note"><b>PARLIAMO è gratuita e non destinata a uso commerciale.</b></p>
+</div></div></div>
+<div id="modal" class="modal"><div class="panel"><button class="close" onclick="closeSearch()">✕</button>
+<h2>Cerca pittogrammi ARASAAC</h2>
+<div class="searchbar"><input id="q" placeholder="es. mangiare" onkeydown="if(event.key==='Enter')searchArasaac()"><button class="primary" onclick="searchArasaac()">Cerca</button></div>
+<p id="status" class="small"></p><div id="results" class="grid"></div>
+<p class="small">Pittogrammi: Sergio Palao / ARASAAC. Licenza CC BY-NC-SA.</p></div></div>
+<script src="app.js"></script></body></html>

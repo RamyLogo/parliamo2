@@ -565,19 +565,65 @@ updateCaseButton();render();renderSentence();const _pn=document.getElementById("
 // gioCAA: storage isolated from original PARLIAMO.
 let gameExercises=JSON.parse(localStorage.getItem("pcs2GameExercises")||"[]");
 let gameActive=false,gameScene=null,gameExpected=[],gameAttempts=0,gameGreen=0,gameRed=0,gameUsed=[];
+let gameRunning=false,gameAdvanceTimer=null;
 const gamePanel=document.getElementById("gamePanel"),gameFeedback=document.getElementById("gameFeedback");
 function normalizeGame(t){return String(t||"").toLocaleLowerCase("it-IT").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim()}
 function allGamePics(items=data.root,out=[]){for(const x of items){if(x.type==="folder")allGamePics(x.items||[],out);else out.push(x)}return out}
 function resolveGame(label){const words=normalizeGame(label).split(" ");const pics=allGamePics().sort((a,b)=>normalizeGame(b.label).length-normalizeGame(a.label).length);const result=[];let pos=0;while(pos<words.length){let found=null,count=0;for(const x of pics){const w=normalizeGame(x.label).split(" ");if(w.length>count&&w.every((v,i)=>v===words[pos+i])){found=x;count=w.length}}if(!found)return {missing:words[pos],expected:result};result.push(found);pos+=count}return {expected:result}}
 function toggleGameHelp(){const el=document.getElementById("gameHelp");el.hidden=!el.hidden}
-function toggleGame(){gameActive=!gameActive;document.body.classList.toggle("game-active",gameActive);gamePanel.hidden=!gameActive;document.getElementById("gameToggle").innerHTML=gameActive?'<span class="game-exit">✕<small>ESCI</small></span>':'<img src="giocaa-logo.png" alt="gioCAA">';if(gameActive){sentence=[];renderSentence();gameFeedback.textContent="";renderGameExercises();renderGameAbacus()}else{gameScene=null;closeScene();renderSentence()}}
+function toggleGame(){
+ if(gameAdvanceTimer){clearTimeout(gameAdvanceTimer);gameAdvanceTimer=null}
+ gameActive=!gameActive;
+ gameRunning=false;
+ document.body.classList.toggle("game-active",gameActive);
+ document.body.classList.remove("game-running","game-solution-shown");
+ gamePanel.hidden=!gameActive;
+ document.getElementById("gameToggle").innerHTML=gameActive?'<span class="game-exit">✕<small>ESCI</small></span>':'<img src="giocaa-logo.png" alt="gioCAA">';
+ if(gameActive){sentence=[];gameScene=null;gameUsed=[];gameGreen=0;gameRed=0;renderSentence();gameFeedback.textContent="";renderGameExercises();renderGameAbacus();document.getElementById('gameVerify').disabled=true}
+ else{gameScene=null;closeScene();renderSentence()}
+}
+function finishGame(){
+ gameRunning=false;gameScene=null;
+ document.body.classList.remove('game-running','game-solution-shown');
+ document.getElementById('gameSolution').hidden=true;
+ document.getElementById('gameVerify').disabled=true;
+ closeScene();sentence=[];renderSentence();
+ gameFeedback.textContent='ESERCIZIO TERMINATO. Il punteggio finale è riportato nell’abaco.';
+}
+
 function renderGameExercises(){const sel=document.getElementById("gameExercise"),prev=sel.value;sel.innerHTML='<option value="all">Tutte le scene abilitate</option>'+gameExercises.map((x,i)=>`<option value="${i}">${esc(x.title)}</option>`).join("");if([...sel.options].some(o=>o.value===prev))sel.value=prev}
 function manageGameExercises(){const title=prompt("Titolo del nuovo esercizio (es. Frasi 2 elementi):");if(!title||!title.trim())return;const enabled=scenesData.map((s,i)=>s.gameEnabled?i:-1).filter(i=>i>=0);if(!enabled.length){alert("Prima abilita alcune scene nella cartella Scene.");return}const selected=prompt("Numeri delle scene da includere, separati da virgole.\n"+enabled.map((i,k)=>`${k+1}. ${scenesData[i].label}`).join("\n")+"\nLascia vuoto per includerle tutte.","");if(selected===null)return;const indexes=selected.trim()?selected.split(",").map(v=>enabled[Number(v.trim())-1]).filter(i=>i!==undefined):enabled;gameExercises.push({title:title.trim(),sceneIds:indexes.map(i=>getSceneKey(scenesData[i]))});localStorage.setItem("pcs2GameExercises",JSON.stringify(gameExercises));renderGameExercises();document.getElementById("gameExercise").value=String(gameExercises.length-1)}
 function getSceneKey(x){if(!x.gameKey)x.gameKey='g'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);saveScenes();return x.gameKey}
-function nextGame(){if(gameScene&&gameAttempts===1&&!confirm("Passare alla scena successiva senza il secondo tentativo?"))return;let pool=scenesData.filter(s=>s.gameEnabled);const chosen=document.getElementById("gameExercise").value;if(chosen!=="all"){const exercise=gameExercises[Number(chosen)];if(exercise)pool=pool.filter(s=>exercise.sceneIds.includes(getSceneKey(s)))}if(!pool.length){gameFeedback.textContent="Nessuna scena abilitata per questo esercizio.";return}let available=pool.filter(s=>!gameUsed.includes(getSceneKey(s)));if(!available.length){gameUsed=[];available=pool}const x=available[Math.floor(Math.random()*available.length)],result=resolveGame(x.label);if(result.missing){gameFeedback.textContent=`Manca il pittogramma «${result.missing}» per la scena «${x.label}».`;return}gameUsed.push(getSceneKey(x));gameScene=x;gameExpected=result.expected;gameAttempts=0;sentence=[];renderSentence();showScene(scenesData.indexOf(x));gameFeedback.textContent="";document.getElementById("gameSolution").hidden=true;document.getElementById("gameVerify").disabled=false}
+function nextGame(){
+ if(!gameActive)return;
+ if(gameAdvanceTimer){clearTimeout(gameAdvanceTimer);gameAdvanceTimer=null}
+ if(!gameRunning){gameRunning=true;gameUsed=[];gameGreen=0;gameRed=0;renderGameAbacus();document.body.classList.add('game-running')}
+ let pool=scenesData.filter(s=>s.gameEnabled);
+ const chosen=document.getElementById('gameExercise').value;
+ if(chosen!=='all'){
+   const exercise=gameExercises[Number(chosen)];
+   if(exercise)pool=pool.filter(s=>exercise.sceneIds.includes(getSceneKey(s)));
+ }
+ if(!pool.length){finishGame();gameFeedback.textContent='Nessuna scena abilitata per questo esercizio.';return}
+ const available=pool.filter(s=>!gameUsed.includes(getSceneKey(s)));
+ if(!available.length){finishGame();return}
+ // Prefer scenes that can be resolved without stopping the activity.
+ const candidates=available.map(s=>({scene:s,result:resolveGame(s.label)}));
+ const ready=candidates.filter(c=>!c.result.missing);
+ if(!ready.length){finishGame();gameFeedback.textContent='Mancano pittogrammi per le scene disponibili: controlla i nomi delle scene e dei pittogrammi.';return}
+ const choice=ready[Math.floor(Math.random()*ready.length)];
+ const x=choice.scene;
+ gameUsed.push(getSceneKey(x));gameScene=x;gameExpected=choice.result.expected;
+ gameAttempts=0;sentence=[];renderSentence();showScene(scenesData.indexOf(x));
+ gameFeedback.textContent='';
+ document.getElementById('gameSolution').hidden=true;
+ document.body.classList.remove('game-solution-shown');
+ document.getElementById('gameVerify').disabled=false;
+}
+
 function gameTokenId(x){return x.id?`id:${x.id}`:`image:${x.image||''}|${normalizeGame(x.label)}`}
 function renderGameAbacus(){for(const [id,n,color] of [["Green",gameGreen,"green"],["Red",gameRed,"red"]]){document.getElementById('game'+id+'Count').textContent=n;const rod=document.getElementById('game'+id+'Rod');rod.innerHTML=Array.from({length:Math.min(n,12)},()=>`<span class="abacus-ball ${color}"></span>`).join('');rod.title=n+' tentativi'}}
-function gameCheck(){if(!gameScene||document.getElementById('gameVerify').disabled)return;gameAttempts++;const expected=gameExpected.map(gameTokenId),actual=sentence.map(gameTokenId),correct=actual.length===expected.length&&actual.every((v,i)=>v===expected[i]);if(correct)gameGreen++;else gameRed++;renderGameAbacus();const counts=new Map();expected.forEach(v=>counts.set(v,(counts.get(v)||0)+1));const statuses=actual.map((v,i)=>{if(v===expected[i]){counts.set(v,counts.get(v)-1);return 'green'}return null});actual.forEach((v,i)=>{if(statuses[i])return;if((counts.get(v)||0)>0){statuses[i]='yellow';counts.set(v,counts.get(v)-1)}else statuses[i]='red'});document.querySelectorAll('#sentence .token').forEach((el,i)=>{const status=statuses[i];el.classList.remove('game-green','game-yellow','game-red');el.classList.add('game-'+status);const action=el.querySelector('.token-action');if(status==='green')action.innerHTML='<span class="token-status correct">✓</span>';if(status==='red')action.innerHTML=`<button class="token-status incorrect" onclick="event.stopPropagation();removeToken(${i})" aria-label="Elimina pittogramma">✕</button>`;if(status==='yellow')action.innerHTML=`<span class="token-status move" title="Sposta pittogramma">↔</span><div class="token-arrows"><button onclick="event.stopPropagation();moveToken(${i},-1)">◀</button><button onclick="event.stopPropagation();moveToken(${i},1)">▶</button></div>`});if(correct){gameFeedback.textContent='CORRETTO!';document.getElementById('gameVerify').disabled=true}else if(gameAttempts>=2){gameFeedback.textContent='Ecco la soluzione di gioCAA.';showGameSolution();document.getElementById('gameVerify').disabled=true}else{gameFeedback.textContent='Puoi correggere e riprovare.'}}
+function gameCheck(){if(!gameScene||document.getElementById('gameVerify').disabled)return;gameAttempts++;const expected=gameExpected.map(gameTokenId),actual=sentence.map(gameTokenId),correct=actual.length===expected.length&&actual.every((v,i)=>v===expected[i]);if(correct)gameGreen++;else gameRed++;renderGameAbacus();const counts=new Map();expected.forEach(v=>counts.set(v,(counts.get(v)||0)+1));const statuses=actual.map((v,i)=>{if(v===expected[i]){counts.set(v,counts.get(v)-1);return 'green'}return null});actual.forEach((v,i)=>{if(statuses[i])return;if((counts.get(v)||0)>0){statuses[i]='yellow';counts.set(v,counts.get(v)-1)}else statuses[i]='red'});document.querySelectorAll('#sentence .token').forEach((el,i)=>{const status=statuses[i];el.classList.remove('game-green','game-yellow','game-red');el.classList.add('game-'+status);const action=el.querySelector('.token-action');if(status==='green')action.innerHTML='<span class="token-status correct">✓</span>';if(status==='red')action.innerHTML=`<button class="token-status incorrect" onclick="event.stopPropagation();removeToken(${i})" aria-label="Elimina pittogramma">✕</button>`;if(status==='yellow')action.innerHTML=`<span class="token-status move" title="Sposta pittogramma">↔</span><div class="token-arrows"><button onclick="event.stopPropagation();moveToken(${i},-1)">◀</button><button onclick="event.stopPropagation();moveToken(${i},1)">▶</button></div>`});if(correct){gameFeedback.textContent='CORRETTO!';document.getElementById('gameVerify').disabled=true;gameAdvanceTimer=setTimeout(()=>{gameAdvanceTimer=null;if(gameActive&&gameRunning)nextGame()},900)}else if(gameAttempts>=2){gameFeedback.textContent='Ecco la soluzione di gioCAA.';showGameSolution();document.body.classList.add('game-solution-shown');document.getElementById('gameVerify').disabled=true}else{gameFeedback.textContent='Puoi correggere e riprovare.'}}
 function showGameSolution(){const box=document.getElementById('gameSolution'),tokens=document.getElementById('gameSolutionTokens');tokens.innerHTML=gameExpected.map((x,i)=>`<div class="game-solution-chip" id="gameSolutionChip${i}"><img src="${x.image||img(x.id)}" alt=""><b>${esc(displayLabel(x.label))}</b></div>`).join('');box.hidden=false}
 function speakGameSolution(){if(!gameExpected.length)return;speechSynthesis.cancel();let index=0;function next(){document.querySelectorAll('.game-solution-chip').forEach(x=>x.classList.remove('speaking'));if(index>=gameExpected.length)return;const chip=document.getElementById('gameSolutionChip'+index);if(chip)chip.classList.add('speaking');const utter=new SpeechSynthesisUtterance(gameExpected[index].label);utter.lang='it-IT';const voice=voices.find(x=>x.name===voiceSelect.value);if(voice)utter.voice=voice;utter.rate=parseFloat(rate.value||'1');utter.onend=()=>{index++;next()};utter.onerror=()=>{index++;next()};speechSynthesis.speak(utter)}next()}
 function moveToken(i,dir){if(document.getElementById('gameVerify').disabled)return;const j=i+dir;if(j<0||j>=sentence.length)return;[sentence[i],sentence[j]]=[sentence[j],sentence[i]];renderSentence();gameFeedback.textContent=''}

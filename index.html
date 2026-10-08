@@ -7,7 +7,18 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
 <title>PARLIAMO by Ramy</title>
-<link rel="stylesheet" href="style.css"></head><body>
+<link rel="stylesheet" href="style.css"><style>
+/* gioCAA: comandi di preparazione nascosti durante la sessione */
+body.game-running .game-header, body.game-running .game-controls label,
+body.game-running #gameExercise, body.game-running .game-controls button:not(#gameVerify),
+body.game-running #gameHelp {display:none !important}
+body.game-active:not(.game-running) #gameVerify {display:none !important}
+body.game-running .game-controls {display:flex;justify-content:flex-end;align-items:center}
+body.game-running #gameVerify {display:inline-flex !important}
+body.game-running.game-solution-shown #gameVerify {display:none !important}
+body.game-running .game-solution[hidden] {display:none !important}
+body.game-running #gameNext {margin-left:10px;background:#6942a1;color:white;border-radius:10px;padding:10px 16px;font-weight:bold}
+</style></head><body>
 <div class="top">
  <div class="topbar">
 <img class="app-mini-logo" src="assets/embedded-1.png" alt="PARLIAMO by Ramy" title="PARLIAMO by Ramy">
@@ -55,7 +66,7 @@
  <div id="gameHelp" class="game-help-text" hidden>Guarda la scena, trova i pittogrammi nelle cartelle e costruisci la frase. Premi VERIFICA: ✓ verde = giusto, ↔ giallo = da spostare, ✕ rosso = da togliere. Hai due tentativi; dopo due errori gioCAA mostra la soluzione viola. L’abaco conta ogni tentativo: verde se corretto, rosso se errato.</div>
  <div class="game-controls"><label for="gameExercise">SCEGLI ESERCIZIO</label><select id="gameExercise" aria-label="Scegli esercizio"></select><button onclick="manageGameExercises()">＋ CREA ESERCIZIO</button><button id="gamePlay" onclick="nextGame()">GIOCA</button><button id="gameVerify" onclick="gameCheck()">VERIFICA</button></div>
  <p id="gameFeedback" aria-live="polite"></p>
- <div id="gameSolution" class="game-solution" hidden><div class="game-solution-title">✦ SOLUZIONE DI gioCAA</div><div id="gameSolutionTokens" class="game-solution-tokens"></div><button onclick="speakGameSolution()">🔊 ASCOLTA SOLUZIONE</button></div>
+ <div id="gameSolution" class="game-solution" hidden><div class="game-solution-title">✦ SOLUZIONE DI gioCAA</div><div id="gameSolutionTokens" class="game-solution-tokens"></div><button onclick="speakGameSolution()">🔊 ASCOLTA SOLUZIONE</button><button id="gameNext" onclick="nextGame()">AVANTI →</button></div>
  <div class="game-abacus" aria-label="Punteggio dei tentativi"><div class="abacus-col"><div class="abacus-rod" id="gameGreenRod"></div><b>CORRETTE <span id="gameGreenCount">0</span></b></div><div class="abacus-col"><div class="abacus-rod" id="gameRedRod"></div><b>ERRATE <span id="gameRedCount">0</span></b></div></div>
  </section>
  <div id="sentence" class="sentence"><span class="small">Tocca i simboli per costruire la frase.</span></div>

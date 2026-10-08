@@ -11,7 +11,7 @@
 <div class="top">
  <div class="topbar">
 <img class="app-mini-logo" src="assets/embedded-1.png" alt="PARLIAMO by Ramy" title="PARLIAMO by Ramy">
-<button id="gameToggle" class="game-toggle" onclick="toggleGame()">▶ gioCAA</button>
+<button id="gameToggle" class="game-toggle" onclick="toggleGame()"><img src="giocaa-logo.png" alt="gioCAA"></button>
 <button class="settings-btn" title="Impostazioni" aria-label="Impostazioni" onclick="toggleMenu('addMenu')">⚙️</button>
 <button class="btn-back" onclick="undo()">↩︎<br><small>Indietro</small></button>
 <button class="btn-clear" onclick="clearSentence()">✕<br><small>Cancella</small></button>
@@ -50,8 +50,15 @@
 </div>
 
 </div>
-<section id="gamePanel" class="game-panel" hidden><div class="game-brand">gio<span>CAA</span></div><div class="game-controls"><select id="gameExercise" aria-label="Esercizio"></select><button onclick="manageGameExercises()">＋ CREA ESERCIZIO</button><button onclick="nextGame()">ESTRAI SCENA</button><button id="gameVerify" onclick="gameCheck()">VERIFICA</button></div><p id="gameFeedback" aria-live="polite"></p><p id="gameSolution" hidden></p><strong id="gameScore">Punti: 0 · Scene completate: 0</strong></section>
-<div id="sentence" class="sentence"><span class="small">Tocca i simboli per costruire la frase.</span></div>
+<section id="gamePanel" class="game-panel" hidden>
+ <div class="game-header"><div class="game-brand">gio<span>CAA</span></div><button class="game-help" onclick="toggleGameHelp()" aria-label="Istruzioni gioCAA">?</button></div>
+ <div id="gameHelp" class="game-help-text" hidden>Guarda la scena, trova i pittogrammi nelle cartelle e costruisci la frase. Premi VERIFICA: ✓ verde = giusto, ↔ giallo = da spostare, ✕ rosso = da togliere. Hai due tentativi; dopo due errori gioCAA mostra la soluzione viola. L’abaco conta ogni tentativo: verde se corretto, rosso se errato.</div>
+ <div class="game-controls"><label for="gameExercise">SCEGLI ESERCIZIO</label><select id="gameExercise" aria-label="Scegli esercizio"></select><button onclick="manageGameExercises()">＋ CREA ESERCIZIO</button><button id="gamePlay" onclick="nextGame()">GIOCA</button><button id="gameVerify" onclick="gameCheck()">VERIFICA</button></div>
+ <p id="gameFeedback" aria-live="polite"></p>
+ <div id="gameSolution" class="game-solution" hidden><div class="game-solution-title">✦ SOLUZIONE DI gioCAA</div><div id="gameSolutionTokens" class="game-solution-tokens"></div><button onclick="speakGameSolution()">🔊 ASCOLTA SOLUZIONE</button></div>
+ <div class="game-abacus" aria-label="Punteggio dei tentativi"><div class="abacus-col"><div class="abacus-rod" id="gameGreenRod"></div><b>CORRETTE <span id="gameGreenCount">0</span></b></div><div class="abacus-col"><div class="abacus-rod" id="gameRedRod"></div><b>ERRATE <span id="gameRedCount">0</span></b></div></div>
+ </section>
+ <div id="sentence" class="sentence"><span class="small">Tocca i simboli per costruire la frase.</span></div>
 <div id="sceneDisplay" class="scene-display" style="display:none">
 <button class="scene-close" onclick="closeScene()" aria-label="Chiudi scena">✕</button>
 <div class="scene-tools">
@@ -71,7 +78,7 @@
 <input id="cameraInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="addLocalPic(event)">
 </div>
  <div id="crumb" class="crumb"></div><button id="addSceneBtn" class="add-scene-btn" onclick="openSceneAddMenu()">＋ AGGIUNGI SCENA</button>
-<div id="sceneAddMenu" class="scene-add-menu" style="display:none">
+<button id="sceneNewFolder" class="scene-folder-action" onclick="newSceneFolder()">＋ NUOVA CARTELLA</button><div id="sceneAddMenu" class="scene-add-menu" style="display:none">
  <button onclick="sceneAddMode='arasaac';searchSceneArasaac()">PITTOGRAMMA ARASAAC</button>
  <button onclick="document.getElementById('sceneImageInput').click()">IMMAGINE DAL DISPOSITIVO</button>
  <input id="sceneImageInput" type="file" accept="image/*" style="display:none" onchange="addSceneImage(event)">

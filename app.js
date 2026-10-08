@@ -22,22 +22,24 @@ function toggleLabelCase(){
  const lab=document.getElementById("sceneDisplayLabel");
  if(lab && lab.dataset.rawLabel!==undefined)lab.textContent=displayLabel(lab.dataset.rawLabel);
 }
+let currentSceneFolder=null;
+function sceneFolderNames(){return JSON.parse(localStorage.getItem("pcs2SceneFolders")||"[]")}
+function saveSceneFolders(v){localStorage.setItem("pcs2SceneFolders",JSON.stringify(v))}
+function newSceneFolder(){const name=prompt("Nome della cartella di scene:");if(!name||!name.trim())return;const folders=sceneFolderNames();if(folders.includes(name.trim())){alert("Cartella già presente.");return}folders.push(name.trim());saveSceneFolders(folders);currentSceneFolder=name.trim();renderScenesGrid()}
+function renameSceneFolder(name){const newer=prompt("Nuovo nome:",name);if(!newer||!newer.trim()||newer===name)return;const folders=sceneFolderNames();if(folders.includes(newer.trim()))return alert("Cartella già presente.");saveSceneFolders(folders.map(x=>x===name?newer.trim():x));scenesData.forEach(x=>{if(x.folder===name)x.folder=newer.trim()});saveScenes();currentSceneFolder=newer.trim();renderScenesGrid()}
+function deleteSceneFolder(name){if(!confirm("Eliminare la cartella? Le scene torneranno nella cartella principale SCENE."))return;scenesData.forEach(x=>{if(x.folder===name)x.folder=""});saveScenes();saveSceneFolders(sceneFolderNames().filter(x=>x!==name));currentSceneFolder=null;renderScenesGrid()}
+function moveSceneFolder(i){const options=["(SCENE - principale)",...sceneFolderNames()];const choice=prompt("Sposta la scena in una cartella. Scrivi il numero:\n"+options.map((x,i)=>`${i}. ${x}`).join("\n"),String(Math.max(0,options.indexOf(scenesData[i].folder||"(SCENE - principale)"))));if(choice===null)return;const n=Number(choice);if(!Number.isInteger(n)||n<0||n>=options.length)return alert("Scelta non valida.");scenesData[i].folder=n===0?"":options[n];saveScenes();renderScenesGrid()}
 function renderScenesGrid(){
- document.body.classList.add("scene-folder");
- const grid=document.getElementById("board");
- const bc=document.getElementById("crumb");
- if(bc)bc.innerHTML='<button onclick="leaveScenes()">↩︎ INDIETRO</button> <b>SCENE</b>';
- document.body.classList.add("scene-folder");
+ document.body.classList.add("scene-folder");const grid=document.getElementById("board"),bc=document.getElementById("crumb");
+ bc.innerHTML='<button onclick="'+(currentSceneFolder!==null?'currentSceneFolder=null;renderScenesGrid()':'leaveScenes()')+'">↩︎ INDIETRO</button> <b>SCENE'+(currentSceneFolder?' / '+esc(currentSceneFolder):'')+'</b> <button class="scene-hide" onclick="hideScenesNow()" title="Nascondi cartella Scene">✕ NASCONDI</button>';
  grid.innerHTML="";
- scenesData.forEach((x,i)=>{
-   const card=document.createElement("div");
-   card.className="card";
-   card.innerHTML=`<img src="${x.image||img(x.id)}"><div class="label-edit scene-card-actions"><button class="edit edit-bottom" aria-label="Modifica scena" onclick="event.stopPropagation();editScene(${i})">✎</button><button class="delete-bottom" aria-label="Cancella scena" onclick="event.stopPropagation();deleteScene(${i})">✕</button></div>`;
-   card.onclick=()=>{ if(!editMode)showScene(i); };
-   const toggle=document.createElement("button");toggle.className="game-scene-toggle";toggle.textContent=x.gameEnabled?"✓ gioCAA":"○ gioCAA";toggle.onclick=e=>{e.stopPropagation();x.gameEnabled=!x.gameEnabled;saveScenes();renderScenesGrid()};card.appendChild(toggle);
-   grid.appendChild(card);
- });
+ const nf=document.getElementById("sceneNewFolder");if(nf)nf.style.display=currentSceneFolder===null?"inline-block":"none";
+ if(currentSceneFolder===null){sceneFolderNames().forEach(name=>{const card=document.createElement("div");card.className="card scene-subfolder";card.innerHTML=`<div class="folder-shell"><div class="folder-tab"></div><div class="folder-shape"></div><div class="scene-folder-symbol">📁</div></div><b>${esc(displayLabel(name))}</b><div class="scene-folder-edit"><button onclick="event.stopPropagation();renameSceneFolder('${esc(name).replace(/&#39;/g,"\'")}')">✎</button><button onclick="event.stopPropagation();deleteSceneFolder('${esc(name).replace(/&#39;/g,"\'")}')">✕</button></div>`;card.onclick=()=>{currentSceneFolder=name;renderScenesGrid()};grid.appendChild(card)})}
+ scenesData.forEach((x,i)=>{if((x.folder||"")!==(currentSceneFolder||""))return;const card=document.createElement("div");card.className="card";
+ card.innerHTML=`<img src="${x.image||img(x.id)}"><div class="label-edit scene-card-actions"><b>${esc(displayLabel(x.label))}</b><button class="edit edit-bottom" onclick="event.stopPropagation();editScene(${i})">✎</button><button class="delete-bottom" onclick="event.stopPropagation();deleteScene(${i})">✕</button></div><button class="scene-move-folder" onclick="event.stopPropagation();moveSceneFolder(${i})">📁 SPOSTA</button>`;
+ card.onclick=()=>{if(!editMode)showScene(i)};const toggle=document.createElement("button");toggle.className="game-scene-toggle";toggle.textContent=x.gameEnabled?"✓ gioCAA":"○ gioCAA";toggle.onclick=e=>{e.stopPropagation();x.gameEnabled=!x.gameEnabled;saveScenes();renderScenesGrid()};card.appendChild(toggle);grid.appendChild(card)});
 }
+function hideScenesNow(){if(scenesVisible)toggleScenes();else leaveScenes()}
 
 function render(){
  document.body.classList.remove("scene-folder");
@@ -66,13 +68,14 @@ function say(t){
  let v=voices.find(x=>x.name===voiceSelect.value);if(v)u.voice=v;
  u.rate=parseFloat(rate.value||"1");speechSynthesis.speak(u)
 }
-function tapPic(i){let x=cur()[i];sentence.push({...x});renderSentence();say(x.label);if(gameActive)gameFeedback.textContent=""}
+function tapPic(i){if(gameActive&&gameScene&&document.getElementById("gameVerify").disabled)return;let x=cur()[i];sentence.push({...x});renderSentence();say(x.label);if(gameActive)gameFeedback.textContent=""}
 function renderSentence(){
- sentenceEl=document.querySelector("#sentence");
- sentenceEl.innerHTML=sentence.length
- ?sentence.map((x,i)=>`<div class="chip token" role="button" tabindex="0" onclick="speakSentenceItem(${i})"><img src="${x.image||img(x.id)}"><div>${esc(displayLabel(x.label))}</div></div>`).join("")
- :'<span class="small">Tocca i simboli per costruire la frase.</span>'
+ const el=document.querySelector("#sentence");el.innerHTML=sentence.length?sentence.map((x,i)=>`<div class="chip token" role="button" tabindex="0" draggable="${gameActive&&!document.getElementById('gameVerify').disabled}" ondragstart="gameDragStart(event,${i})" ondragover="event.preventDefault()" ondrop="gameDrop(event,${i})" onclick="speakSentenceItem(${i})"><img src="${x.image||img(x.id)}"><div>${esc(displayLabel(x.label))}</div><span class="token-action"></span></div>`).join(""):'<span class="small">Tocca i simboli per costruire la frase.</span>';
 }
+let gameDragged=null;
+function gameDragStart(ev,i){if(!gameActive)return;gameDragged=i;ev.dataTransfer.effectAllowed="move"}
+function gameDrop(ev,i){ev.preventDefault();if(gameDragged===null||gameDragged===i)return;const x=sentence.splice(gameDragged,1)[0];sentence.splice(i,0,x);gameDragged=null;renderSentence()}
+
 let lastSentenceTouch=0;
 function speakSentenceItem(i){
  const now=Date.now();
@@ -278,6 +281,7 @@ function exportProfile(){
    data:data,
    scenes:scenesData,
    gameExercises:gameExercises,
+   sceneFolders:sceneFolderNames(),
    voice:localStorage.getItem("pcs2Voice")||"",
    rate:localStorage.getItem("pcs2Rate")||"1"
  };
@@ -304,6 +308,7 @@ function importProfileFile(ev){
      data=x.data;
      scenesData=Array.isArray(x.scenes)?x.scenes:[];
      gameExercises=Array.isArray(x.gameExercises)?x.gameExercises:[];localStorage.setItem("pcs2GameExercises",JSON.stringify(gameExercises));
+     saveSceneFolders(Array.isArray(x.sceneFolders)?x.sceneFolders:[...new Set(scenesData.map(s=>s.folder).filter(Boolean))]);
      profileName=x.profileName||"UTENTE";
      localStorage.setItem("pcs2Data",JSON.stringify(data));
      localStorage.setItem("pcs2Scenes",JSON.stringify(scenesData));
@@ -331,7 +336,7 @@ function addSceneImage(ev){
  const label=prompt("Nome della scena:",""); if(label===null){ev.target.value="";return}
  const r=new FileReader();
  r.onload=()=>{
-   scenesData.push({type:"pic",label:label.trim()||"SCENA",image:r.result});
+   scenesData.push({type:"pic",label:label.trim()||"SCENA",image:r.result,folder:currentSceneFolder||""});
    saveScenes(); render();
    document.body.classList.add("scene-folder");
  };
@@ -350,7 +355,7 @@ async function searchSceneArasaac(){
    const id=first._id;
    const label=prompt("Nome della scena:",term);
    if(label===null)return;
-   scenesData.push({type:"pic",label:label.trim()||term,id:id});
+   scenesData.push({type:"pic",label:label.trim()||term,id:id,folder:currentSceneFolder||""});
    saveScenes(); render();
    document.body.classList.add("scene-folder");
  }catch(e){alert("Ricerca ARASAAC non disponibile.");}
@@ -401,7 +406,7 @@ function toggleScenes(){
 }
 
 function openScenes(){
- 
+ currentSceneFolder=null;
  inScenes=true;
  closeScene();
  render();
@@ -557,19 +562,23 @@ loadVoices();speechSynthesis.onvoiceschanged=loadVoices;
 
 updateCaseButton();render();renderSentence();const _pn=document.getElementById("profileName");if(_pn)_pn.value=profileName;if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
 
-// gioCAA: separate development edition, stored in pcs2 namespace.
+// gioCAA: storage isolated from original PARLIAMO.
 let gameExercises=JSON.parse(localStorage.getItem("pcs2GameExercises")||"[]");
-let gameActive=false,gameScene=null,gameExpected=[],gameAttempts=0,gameScore=0,gameDone=0,gameUsed=[];
+let gameActive=false,gameScene=null,gameExpected=[],gameAttempts=0,gameGreen=0,gameRed=0,gameUsed=[];
 const gamePanel=document.getElementById("gamePanel"),gameFeedback=document.getElementById("gameFeedback");
 function normalizeGame(t){return String(t||"").toLocaleLowerCase("it-IT").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim()}
 function allGamePics(items=data.root,out=[]){for(const x of items){if(x.type==="folder")allGamePics(x.items||[],out);else out.push(x)}return out}
 function resolveGame(label){const words=normalizeGame(label).split(" ");const pics=allGamePics().sort((a,b)=>normalizeGame(b.label).length-normalizeGame(a.label).length);const result=[];let pos=0;while(pos<words.length){let found=null,count=0;for(const x of pics){const w=normalizeGame(x.label).split(" ");if(w.length>count&&w.every((v,i)=>v===words[pos+i])){found=x;count=w.length}}if(!found)return {missing:words[pos],expected:result};result.push(found);pos+=count}return {expected:result}}
-function toggleGame(){gameActive=!gameActive;document.body.classList.toggle("game-active",gameActive);gamePanel.hidden=!gameActive;document.getElementById("gameToggle").textContent=gameActive?"✕ ESCI DA gioCAA":"▶ gioCAA";if(gameActive){sentence=[];renderSentence();gameFeedback.textContent="Scegli un esercizio oppure usa tutte le scene abilitate.";renderGameExercises()}else{gameScene=null;closeScene();renderSentence()}}
-function renderGameExercises(){const sel=document.getElementById("gameExercise");const prev=sel.value;sel.innerHTML='<option value="all">Tutte le scene abilitate</option>'+gameExercises.map((x,i)=>`<option value="${i}">${esc(x.title)}</option>`).join('');if([...sel.options].some(o=>o.value===prev))sel.value=prev}
-function manageGameExercises(){const title=prompt("Titolo del nuovo esercizio (es. Frasi 2 elementi):");if(!title||!title.trim())return;const enabled=scenesData.map((s,i)=>s.gameEnabled?i:-1).filter(i=>i>=0);if(!enabled.length){alert("Prima abilita alcune scene nella cartella Scene.");return}const selected=prompt("Numeri delle scene da includere, separati da virgole.\n"+enabled.map((i,k)=>`${k+1}. ${scenesData[i].label}`).join("\n")+"\nLascia vuoto per includerle tutte.","");if(selected===null)return;const indexes=selected.trim()?selected.split(",").map(v=>enabled[Number(v.trim())-1]).filter(i=>i!==undefined):enabled;gameExercises.push({title:title.trim(),sceneIds:indexes.map(i=>getSceneKey(scenesData[i]))});localStorage.setItem("pcs2GameExercises",JSON.stringify(gameExercises));renderGameExercises()}
+function toggleGameHelp(){const el=document.getElementById("gameHelp");el.hidden=!el.hidden}
+function toggleGame(){gameActive=!gameActive;document.body.classList.toggle("game-active",gameActive);gamePanel.hidden=!gameActive;document.getElementById("gameToggle").innerHTML=gameActive?'<span class="game-exit">✕<small>ESCI</small></span>':'<img src="giocaa-logo.png" alt="gioCAA">';if(gameActive){sentence=[];renderSentence();gameFeedback.textContent="";renderGameExercises();renderGameAbacus()}else{gameScene=null;closeScene();renderSentence()}}
+function renderGameExercises(){const sel=document.getElementById("gameExercise"),prev=sel.value;sel.innerHTML='<option value="all">Tutte le scene abilitate</option>'+gameExercises.map((x,i)=>`<option value="${i}">${esc(x.title)}</option>`).join("");if([...sel.options].some(o=>o.value===prev))sel.value=prev}
+function manageGameExercises(){const title=prompt("Titolo del nuovo esercizio (es. Frasi 2 elementi):");if(!title||!title.trim())return;const enabled=scenesData.map((s,i)=>s.gameEnabled?i:-1).filter(i=>i>=0);if(!enabled.length){alert("Prima abilita alcune scene nella cartella Scene.");return}const selected=prompt("Numeri delle scene da includere, separati da virgole.\n"+enabled.map((i,k)=>`${k+1}. ${scenesData[i].label}`).join("\n")+"\nLascia vuoto per includerle tutte.","");if(selected===null)return;const indexes=selected.trim()?selected.split(",").map(v=>enabled[Number(v.trim())-1]).filter(i=>i!==undefined):enabled;gameExercises.push({title:title.trim(),sceneIds:indexes.map(i=>getSceneKey(scenesData[i]))});localStorage.setItem("pcs2GameExercises",JSON.stringify(gameExercises));renderGameExercises();document.getElementById("gameExercise").value=String(gameExercises.length-1)}
 function getSceneKey(x){if(!x.gameKey)x.gameKey='g'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);saveScenes();return x.gameKey}
-function nextGame(){let pool=scenesData.filter(s=>s.gameEnabled);const chosen=document.getElementById("gameExercise").value;if(chosen!=="all"){const exercise=gameExercises[Number(chosen)];if(exercise)pool=pool.filter(s=>exercise.sceneIds.includes(s.gameKey))}if(!pool.length){gameFeedback.textContent="Nessuna scena abilitata per questo esercizio.";return}let available=pool.filter(s=>!gameUsed.includes(getSceneKey(s)));if(!available.length){gameUsed=[];available=pool}const x=available[Math.floor(Math.random()*available.length)];const result=resolveGame(x.label);if(result.missing){gameFeedback.textContent=`Impossibile avviare: manca il pittogramma per «${result.missing}» nella scena «${x.label}». Aggiungilo alle cartelle con lo stesso nome.`;return}gameUsed.push(getSceneKey(x));gameScene=x;gameExpected=result.expected;gameAttempts=0;sentence=[];renderSentence();showScene(scenesData.indexOf(x));gameFeedback.textContent="Componi la frase e premi VERIFICA.";document.getElementById("gameSolution").hidden=true;document.getElementById("gameVerify").disabled=false}
+function nextGame(){if(gameScene&&gameAttempts===1&&!confirm("Passare alla scena successiva senza il secondo tentativo?"))return;let pool=scenesData.filter(s=>s.gameEnabled);const chosen=document.getElementById("gameExercise").value;if(chosen!=="all"){const exercise=gameExercises[Number(chosen)];if(exercise)pool=pool.filter(s=>exercise.sceneIds.includes(getSceneKey(s)))}if(!pool.length){gameFeedback.textContent="Nessuna scena abilitata per questo esercizio.";return}let available=pool.filter(s=>!gameUsed.includes(getSceneKey(s)));if(!available.length){gameUsed=[];available=pool}const x=available[Math.floor(Math.random()*available.length)],result=resolveGame(x.label);if(result.missing){gameFeedback.textContent=`Manca il pittogramma «${result.missing}» per la scena «${x.label}».`;return}gameUsed.push(getSceneKey(x));gameScene=x;gameExpected=result.expected;gameAttempts=0;sentence=[];renderSentence();showScene(scenesData.indexOf(x));gameFeedback.textContent="";document.getElementById("gameSolution").hidden=true;document.getElementById("gameVerify").disabled=false}
 function gameTokenId(x){return x.id?`id:${x.id}`:`image:${x.image||''}|${normalizeGame(x.label)}`}
-function gameCheck(){if(!gameScene)return;gameAttempts++;const expected=gameExpected.map(gameTokenId),actual=sentence.map(gameTokenId);const correct=actual.length===expected.length&&actual.every((v,i)=>v===expected[i]);document.querySelectorAll("#sentence .token").forEach((el,i)=>{const v=actual[i];el.classList.remove("game-green","game-yellow","game-red");el.classList.add(v===expected[i]?"game-green":expected.includes(v)?"game-yellow":"game-red")});if(correct){gameScore+=gameAttempts===1?2:1;gameDone++;gameFeedback.textContent="CORRETTO! "+(gameAttempts===1?"2 punti":"1 punto");document.getElementById("gameVerify").disabled=true}else if(gameAttempts>=2){gameDone++;gameFeedback.textContent="Secondo tentativo: ecco la soluzione.";document.getElementById("gameSolution").hidden=false;document.getElementById("gameSolution").textContent=gameExpected.map(x=>x.label).join(" → ");document.getElementById("gameVerify").disabled=true}else{gameFeedback.textContent="Verde: giusto. Giallo: posizione errata. Rosso: non previsto. Puoi riprovare una volta."}document.getElementById("gameScore").textContent=`Punti: ${gameScore} · Scene completate: ${gameDone}`}
-function moveToken(i,dir){const j=i+dir;if(j<0||j>=sentence.length)return;[sentence[i],sentence[j]]=[sentence[j],sentence[i]];renderSentence();gameFeedback.textContent="Sequenza modificata: premi VERIFICA."}
-function removeToken(i){sentence.splice(i,1);renderSentence()}
+function renderGameAbacus(){for(const [id,n,color] of [["Green",gameGreen,"green"],["Red",gameRed,"red"]]){document.getElementById('game'+id+'Count').textContent=n;const rod=document.getElementById('game'+id+'Rod');rod.innerHTML=Array.from({length:Math.min(n,12)},()=>`<span class="abacus-ball ${color}"></span>`).join('');rod.title=n+' tentativi'}}
+function gameCheck(){if(!gameScene||document.getElementById('gameVerify').disabled)return;gameAttempts++;const expected=gameExpected.map(gameTokenId),actual=sentence.map(gameTokenId),correct=actual.length===expected.length&&actual.every((v,i)=>v===expected[i]);if(correct)gameGreen++;else gameRed++;renderGameAbacus();const counts=new Map();expected.forEach(v=>counts.set(v,(counts.get(v)||0)+1));const statuses=actual.map((v,i)=>{if(v===expected[i]){counts.set(v,counts.get(v)-1);return 'green'}return null});actual.forEach((v,i)=>{if(statuses[i])return;if((counts.get(v)||0)>0){statuses[i]='yellow';counts.set(v,counts.get(v)-1)}else statuses[i]='red'});document.querySelectorAll('#sentence .token').forEach((el,i)=>{const status=statuses[i];el.classList.remove('game-green','game-yellow','game-red');el.classList.add('game-'+status);const action=el.querySelector('.token-action');if(status==='green')action.innerHTML='<span class="token-status correct">✓</span>';if(status==='red')action.innerHTML=`<button class="token-status incorrect" onclick="event.stopPropagation();removeToken(${i})" aria-label="Elimina pittogramma">✕</button>`;if(status==='yellow')action.innerHTML=`<span class="token-status move" title="Sposta pittogramma">↔</span><div class="token-arrows"><button onclick="event.stopPropagation();moveToken(${i},-1)">◀</button><button onclick="event.stopPropagation();moveToken(${i},1)">▶</button></div>`});if(correct){gameFeedback.textContent='CORRETTO!';document.getElementById('gameVerify').disabled=true}else if(gameAttempts>=2){gameFeedback.textContent='Ecco la soluzione di gioCAA.';showGameSolution();document.getElementById('gameVerify').disabled=true}else{gameFeedback.textContent='Puoi correggere e riprovare.'}}
+function showGameSolution(){const box=document.getElementById('gameSolution'),tokens=document.getElementById('gameSolutionTokens');tokens.innerHTML=gameExpected.map((x,i)=>`<div class="game-solution-chip" id="gameSolutionChip${i}"><img src="${x.image||img(x.id)}" alt=""><b>${esc(displayLabel(x.label))}</b></div>`).join('');box.hidden=false}
+function speakGameSolution(){if(!gameExpected.length)return;speechSynthesis.cancel();let index=0;function next(){document.querySelectorAll('.game-solution-chip').forEach(x=>x.classList.remove('speaking'));if(index>=gameExpected.length)return;const chip=document.getElementById('gameSolutionChip'+index);if(chip)chip.classList.add('speaking');const utter=new SpeechSynthesisUtterance(gameExpected[index].label);utter.lang='it-IT';const voice=voices.find(x=>x.name===voiceSelect.value);if(voice)utter.voice=voice;utter.rate=parseFloat(rate.value||'1');utter.onend=()=>{index++;next()};utter.onerror=()=>{index++;next()};speechSynthesis.speak(utter)}next()}
+function moveToken(i,dir){if(document.getElementById('gameVerify').disabled)return;const j=i+dir;if(j<0||j>=sentence.length)return;[sentence[i],sentence[j]]=[sentence[j],sentence[i]];renderSentence();gameFeedback.textContent=''}
+function removeToken(i){if(document.getElementById('gameVerify').disabled)return;sentence.splice(i,1);renderSentence()}

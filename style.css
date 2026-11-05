@@ -514,3 +514,82 @@ body.scene-folder .scene-add-menu.open{display:grid!important;gap:6px;margin:0 0
     padding-bottom: max(24px, env(safe-area-inset-bottom)) !important;
   }
 }
+
+/* Keep controls and the sentence still while the board scrolls. */
+html{height:100%}
+body{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+.fixed-controls{flex:0 0 auto;min-width:0;max-height:78vh;max-height:78dvh;overflow:auto;background:#fff;z-index:4;box-shadow:0 1px 8px #0002}
+.fixed-controls .top{position:relative;box-shadow:none;padding-bottom:0}
+.fixed-controls #sentence{width:calc(100% - 16px)!important;margin:8px 8px 12px!important}
+body main,body.scene-open main{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.board-size-controls{display:flex;align-items:center;justify-content:flex-end;gap:8px;font-size:13px}
+.board-size-controls button{width:44px;height:44px;padding:0;font-size:26px;font-weight:bold}
+.board-size-controls output{min-width:42px;text-align:center}
+button:disabled{opacity:.45;cursor:default}
+#addMenu{position:fixed;top:70px;max-height:calc(100dvh - 90px);overflow:auto;box-sizing:border-box}
+#gameRepeatMode{display:block;width:100%;padding:8px;margin:6px 0 10px;font:inherit}
+
+/* Scale only the lower board, including folder covers and their labels. */
+#board{grid-template-columns:repeat(auto-fill,minmax(min(100%,calc(140px * var(--board-scale,1))),1fr))}
+#board .card{min-width:0;font-size:calc(16px * var(--board-scale,1));overflow-wrap:anywhere}
+#board .card>img{height:calc(105px * var(--board-scale,1))!important}
+#board .folder-shell{height:calc(100px * var(--board-scale,1))!important}
+#board .folder-shape{width:calc(118px * var(--board-scale,1))!important;height:calc(76px * var(--board-scale,1))!important;max-width:95%;bottom:calc(3px * var(--board-scale,1))!important}
+#board .folder-tab{width:calc(55px * var(--board-scale,1))!important;height:calc(20px * var(--board-scale,1))!important;left:10%;top:calc(8px * var(--board-scale,1))!important}
+#board .folder-shell img{width:calc(82px * var(--board-scale,1))!important;height:calc(64px * var(--board-scale,1))!important;margin-top:calc(13px * var(--board-scale,1))!important}
+#board .scene-folder-symbol{font-size:calc(36px * var(--board-scale,1))}
+.abacus-ball.orange{background:#ef8b23}
+body.game-running .game-panel .abacus-rod{overflow:hidden}
+body.game-finished .game-stage-compact{display:grid}
+body.game-finished .game-panel #gameVerifyCompact{display:none}
+body:not(.edit-mode) .scene-folder-edit,body:not(.edit-mode) .scene-move-folder,body:not(.edit-mode) .game-move{display:none!important}
+.sentence .token{position:relative}
+.sentence-edit-actions{display:flex;justify-content:center;gap:2px;margin-top:4px}
+.sentence-edit-actions button{padding:2px 4px;min-width:24px;font-size:13px}
+.token-status.incorrect{cursor:default}
+body:not(.edit-mode) .sentence-edit-actions{display:none}
+@media(max-width:600px){
+ .topbar{gap:4px}
+ .board-size-controls{gap:5px}
+ .board-size-controls button{width:40px;height:40px}
+ .game-stage-compact{grid-template-columns:minmax(0,1fr) minmax(140px,1fr)}
+ .game-abacus{gap:5px}
+ .game-solution{margin:4px 0;padding:6px}
+ .game-solution-chip{min-width:45px;max-width:65px;padding:3px;font-size:10px}
+ .game-solution-chip img{width:42px;height:42px}
+ body.game-active .game-panel .game-scene-slot #sceneDisplayImg{max-height:100px!important}
+ .game-solution-title{margin-bottom:4px;font-size:13px}
+ .game-solution>button{margin-top:4px;padding:6px;font-size:12px}
+ #gameFeedback{margin:4px 0;font-size:13px}
+}
+body.game-running .abacus-ball{height:5px}
+@media(max-width:600px){.game-panel .game-stage-compact{grid-template-columns:minmax(0,1fr) minmax(140px,1fr)}}
+/* On short screens, scroll the game details while keeping the sentence visible. */
+.fixed-controls{display:flex;flex-direction:column;max-height:calc(100dvh - 110px);overflow:visible}
+.fixed-controls .top,.fixed-controls #sentence{flex-shrink:0}
+.fixed-controls .game-panel{flex:0 1 auto;min-height:0;max-height:40dvh;overflow:auto}
+body.game-running .game-panel .abacus-col{min-width:0;width:42px;text-align:center;white-space:normal}
+body.game-running .game-panel .abacus-col b{white-space:normal;overflow-wrap:anywhere}
+.abacus-col b span{display:block}
+#gameFeedback:empty{display:none}
+@media(max-height:500px) and (min-width:600px){
+ .fixed-controls .top{display:flex;align-items:center;gap:8px;padding-bottom:4px}
+ .fixed-controls .topbar{flex:1;margin:0;flex-wrap:nowrap;gap:4px}
+ .board-size-controls>span{display:none}
+ .board-size-controls{flex-shrink:0;gap:4px}
+ .board-size-controls button{width:36px;height:36px}
+ .game-panel .game-stage-compact{margin:0;grid-template-columns:minmax(0,1fr) 230px}
+ .game-panel .game-score-side{flex-direction:row;gap:6px}
+ body.game-active .game-panel .game-scene-slot #sceneDisplayImg{max-height:46px!important}
+ body.game-active .game-panel .game-scene-slot #sceneDisplay{padding:2px!important}
+ body.game-running .game-panel .abacus-rod{height:30px!important}
+ body.game-running .game-panel .abacus-col{font-size:8px!important;gap:1px!important}
+ body.game-running .game-panel .abacus-col b span{display:inline}
+ .game-panel #gameVerifyCompact{font-size:11px;padding:6px}
+ .game-scene-slot .scene-tool{width:26px!important;height:26px!important;min-width:26px!important;padding:2px!important}
+ .game-scene-slot .scene-tool img{width:20px!important;height:20px!important}
+}
+@media(max-width:600px){
+ body.game-running .game-panel .abacus-rod{height:62px!important}
+ body.game-running .game-panel .abacus-ball{height:3px}
+}

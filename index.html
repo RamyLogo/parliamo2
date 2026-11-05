@@ -36,6 +36,7 @@ body.game-running .game-panel{padding:5px!important;margin:4px!important}
 .game-help{display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:0!important;line-height:1!important;text-align:center!important;box-sizing:border-box!important}
 @media(max-width:550px){.game-stage-compact{grid-template-columns:minmax(0, 1.5fr) minmax(112px,1fr);gap:5px}.game-score-side{gap:4px}body.game-running .game-abacus{gap:5px!important}body.game-running .abacus-col{font-size:9px!important}body.game-active .game-scene-slot #sceneDisplayImg{max-height:135px!important}#gameVerifyCompact{font-size:12px;padding:6px 8px}}
 </style></head><body>
+<header class="fixed-controls">
 <div class="top">
  <div class="topbar">
 <img class="app-mini-logo" src="assets/embedded-1.png" alt="PARLIAMO by Ramy" title="PARLIAMO by Ramy">
@@ -45,6 +46,7 @@ body.game-running .game-panel{padding:5px!important;margin:4px!important}
 <button class="btn-clear" onclick="clearSentence()">✕<br><small>Cancella</small></button>
 <button class="primary btn-speak" onclick="speakSentence()"><img class="speak-icon" src="assets/embedded-2.png" alt=""><span class="speak-label">PARLA</span></button>
 </div>
+<div class="board-size-controls" role="group" aria-label="Dimensione cartelle e pittogrammi"><span>Cartelle e pittogrammi</span><button id="boardSmaller" type="button" onclick="resizeBoard(-1)" aria-label="Rimpicciolisci cartelle e pittogrammi">−</button><button id="boardLarger" type="button" onclick="resizeBoard(1)" aria-label="Ingrandisci cartelle e pittogrammi">+</button><output id="boardSize" aria-live="polite">100%</output></div>
 <div id="addMenu" class="popover">
 <button onclick="openInfo();hideMenus()">ⓘ INFORMAZIONI E ISTRUZIONI</button>
 <button onclick="openInfo('crediti-arasaac');hideMenus()">© CREDITI ARASAAC</button>
@@ -56,6 +58,7 @@ body.game-running .game-panel{padding:5px!important;margin:4px!important}
 <input id="rate" type="range" min="0.6" max="1.4" step="0.1" value="1" onchange="saveVoice()">
 </div>
 
+<label for="gameRepeatMode">Ripasso dopo la soluzione</label><select id="gameRepeatMode" onchange="saveGameRepeatMode()"><option value="immediate">Subito</option><option value="delayed">Dopo un’altra frase</option></select>
 <button id="editModeBtn" onclick="toggleEditMode();hideMenus()">✎ MODIFICA</button>
 <button id="sceneToggleBtn" onclick="toggleScenes()">▣ MOSTRA CARTELLA SCENE</button>
 <button id="caseToggleBtn" onclick="toggleLabelCase()">Aa minuscolo</button>
@@ -80,13 +83,15 @@ body.game-running .game-panel{padding:5px!important;margin:4px!important}
 </div>
 <section id="gamePanel" class="game-panel" hidden>
  <div class="game-header"><div class="game-brand">gio<span>CAA</span></div><button class="game-help" onclick="toggleGameHelp()" aria-label="Istruzioni gioCAA">?</button></div>
- <div id="gameHelp" class="game-help-text" hidden>Guarda la scena, trova i pittogrammi nelle cartelle e costruisci la frase. Premi VERIFICA: ✓ verde = giusto, ↔ giallo = da spostare, ✕ rosso = da togliere. Hai due tentativi; dopo due errori gioCAA mostra la soluzione viola. L’abaco conta ogni tentativo: verde se corretto, rosso se errato.</div>
+ <div id="gameHelp" class="game-help-text" hidden>Guarda la scena, trova i pittogrammi nelle cartelle e costruisci la frase. Premi VERIFICA: ✓ verde = giusto, ↔ giallo = da spostare, ✕ rosso = da togliere. Hai due tentativi; dopo due errori gioCAA mostra la soluzione viola. L’abaco conta in rosso gli errori, in arancione le risposte corrette dopo la soluzione e in verde quelle autonome. Premi AVANTI per riprovare, subito o dopo un’altra frase (Impostazioni). Un ripasso a distanza corretto al primo tentativo sposta il punto dall’arancione al verde. Se non ci sono altre frasi disponibili, il primo ripasso avviene subito; il punto resta arancione finché non è possibile un ripasso a distanza.</div>
  <div class="game-controls"><label for="gameExercise">SCEGLI ESERCIZIO</label><select id="gameExercise" aria-label="Scegli esercizio"></select><button onclick="manageGameExercises()">＋ CREA ESERCIZIO</button><button id="gamePlay" onclick="nextGame()">GIOCA</button><button id="gameVerify" onclick="gameCheck()">VERIFICA</button></div>
  <p id="gameFeedback" aria-live="polite"></p>
- <div id="gameSolution" class="game-solution" hidden><div class="game-solution-title">✦ SOLUZIONE DI gioCAA</div><div id="gameSolutionTokens" class="game-solution-tokens"></div><button onclick="speakGameSolution()">🔊 ASCOLTA SOLUZIONE</button><button id="gameNext" onclick="nextGame()">AVANTI →</button></div>
- <div id="gameStage" class="game-stage-compact"><div id="gameSceneSlot" class="game-scene-slot"></div><div class="game-score-side"><div class="game-abacus" aria-label="Punteggio dei tentativi"><div class="abacus-col"><div class="abacus-rod" id="gameGreenRod"></div><b>CORRETTE <span id="gameGreenCount">0</span></b></div><div class="abacus-col"><div class="abacus-rod" id="gameRedRod"></div><b>ERRATE <span id="gameRedCount">0</span></b></div></div><button id="gameVerifyCompact" type="button" onclick="gameCheck()">VERIFICA</button></div></div>
+ <div id="gameSolution" class="game-solution" hidden><div class="game-solution-title">✦ SOLUZIONE DI gioCAA</div><div id="gameSolutionTokens" class="game-solution-tokens"></div><button onclick="speakGameSolution()">🔊 ASCOLTA SOLUZIONE</button><button id="gameNext" onclick="nextGame()">AVANTI / RIPROVA →</button></div>
+ <div id="gameStage" class="game-stage-compact"><div id="gameSceneSlot" class="game-scene-slot"></div><div class="game-score-side"><div class="game-abacus" aria-label="Punteggio dei tentativi"><div class="abacus-col"><div class="abacus-rod" id="gameGreenRod"></div><b>CORRETTE <span id="gameGreenCount">0</span></b></div><div class="abacus-col"><div class="abacus-rod" id="gameOrangeRod"></div><b>CON AIUTO <span id="gameOrangeCount">0</span></b></div><div class="abacus-col"><div class="abacus-rod" id="gameRedRod"></div><b>ERRATE <span id="gameRedCount">0</span></b></div></div><button id="gameVerifyCompact" type="button" onclick="gameCheck()">VERIFICA</button></div></div>
  </section>
  <div id="sentence" class="sentence"><span class="small">Tocca i simboli per costruire la frase.</span></div>
+</header>
+<main>
 <div id="sceneDisplay" class="scene-display" style="display:none">
 <button class="scene-close" onclick="closeScene()" aria-label="Chiudi scena">✕</button>
 <div class="scene-tools">
@@ -96,7 +101,6 @@ body.game-running .game-panel{padding:5px!important;margin:4px!important}
 <img id="sceneDisplayImg" alt="">
 <div id="sceneDisplayLabel" hidden></div>
 </div>
-<main>
  <div class="toolbar"><button id="backBtn" onclick="goBack()" style="display:none">← Indietro</button>
 
 <input id="folderImageInput" type="file" accept="image/*" style="display:none" onchange="setFolderImage(event)">

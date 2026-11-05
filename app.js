@@ -1,3 +1,14 @@
+// The board scale never applies to the sentence strip.
+let boardScale=Number(localStorage.getItem('pcs2BoardScale'))||1;
+function resizeBoard(step=0){
+ boardScale=Math.max(.7,Math.min(1.6,Math.round((boardScale+step*.15)*100)/100));
+ document.documentElement.style.setProperty('--board-scale',boardScale);
+ document.getElementById('boardSize').textContent=Math.round(boardScale*100)+'%';
+ document.getElementById('boardSmaller').disabled=boardScale<=.7;
+ document.getElementById('boardLarger').disabled=boardScale>=1.6;
+ localStorage.setItem('pcs2BoardScale',boardScale);
+}
+resizeBoard();
 const seed=[{"type":"folder","label":"PERSONE","items":[{"type":"pic","label":"il bimbo","id":7176}],"image":"https://static.arasaac.org/pictograms/7116/7116_500.png","iconPictogramId":7116},{"type":"folder","label":"AZIONI","items":[{"type":"pic","label":"mangia","id":6456}],"image":"https://static.arasaac.org/pictograms/7297/7297_500.png","iconPictogramId":7297},{"type":"folder","label":"GIOCHI","items":[{"type":"pic","id":3241,"label":"palla"},{"type":"pic","id":27612,"label":"palla da bowling"},{"type":"pic","id":2514,"label":"palla da tennis"}],"image":"https://static.arasaac.org/pictograms/9813/9813_500.png"},{"type":"folder","label":"CIBI","items":[{"type":"pic","label":"la pizza","id":2527}],"image":"https://static.arasaac.org/pictograms/4610/4610_500.png","iconPictogramId":4610},{"type":"folder","label":"colori","items":[],"image":"https://static.arasaac.org/pictograms/5968/5968_500.png","iconPictogramId":5968}];
 let data=JSON.parse(localStorage.getItem("pcs2Data")||"null")||{root:seed}, path=["root"], sentence=[];
 const img=id=>`https://static.arasaac.org/pictograms/${id}/${id}_500.png`;
@@ -46,7 +57,7 @@ function render(){
  if(inScenes){ renderScenesGrid(); return; }
  let a=cur();board.innerHTML=a.map((x,i)=>x.type==="folder"?
  `<div class="card" draggable="${editMode}" ondragstart="dragStart(event,${i})" ondragover="dragOver(event,${i})" ondragleave="dragLeave(event)" ondrop="dropItem(event,${i})" ondragend="dragEnd(event)" onclick="if(!editMode)openFolder(${i})"><div class="folder-shell"><div class="folder-tab"></div><div class="folder-shape"></div>${x.image?`<img src="${x.image}">`:`<div style="position:relative;z-index:2;font-size:42px;margin-top:20px">📁</div>`}</div><div class="label-edit"><b>${esc(displayLabel(x.label))}</b><button class="edit edit-bottom" aria-label="Modifica nome" onclick="event.preventDefault();event.stopPropagation();editItem(${i})">✎</button><button class="delete-bottom" aria-label="Cancella" onclick="event.preventDefault();event.stopPropagation();deleteItem(${i})">✕</button></div></div>`:
- `<div class="card" draggable="${editMode}" ondragstart="dragStart(event,${i})" ondragover="dragOver(event,${i})" ondragleave="dragLeave(event)" ondrop="dropItem(event,${i})" ondragend="dragEnd(event)" onclick="if(!editMode)tapPic(${i})"><img src="${x.image||img(x.id)}"><div class="label-edit"><b>${esc(displayLabel(x.label))}</b><button class="edit edit-bottom" aria-label="Modifica nome" onclick="event.preventDefault();event.stopPropagation();editItem(${i})">✎</button><button class="delete-bottom" aria-label="Cancella" onclick="event.preventDefault();event.stopPropagation();deleteItem(${i})">✕</button></div>${gameActive?`<div class="game-move"><button onclick="moveToken(${i},-1)">←</button><button onclick="moveToken(${i},1)">→</button><button onclick="removeToken(${i})">✕</button></div>`:""}</div>`).join("");
+ `<div class="card" draggable="${editMode}" ondragstart="dragStart(event,${i})" ondragover="dragOver(event,${i})" ondragleave="dragLeave(event)" ondrop="dropItem(event,${i})" ondragend="dragEnd(event)" onclick="if(!editMode)tapPic(${i})"><img src="${x.image||img(x.id)}"><div class="label-edit"><b>${esc(displayLabel(x.label))}</b><button class="edit edit-bottom" aria-label="Modifica nome" onclick="event.preventDefault();event.stopPropagation();editItem(${i})">✎</button><button class="delete-bottom" aria-label="Cancella" onclick="event.preventDefault();event.stopPropagation();deleteItem(${i})">✕</button></div></div>`).join("");
  crumb.textContent=path.length===1?"":folderNames().join(" / ");backBtn.style.display=path.length>1?"inline-block":"none";
 
  // SCENE: visible only when explicitly activated in this session and only at root.
@@ -70,11 +81,11 @@ function say(t){
 }
 function tapPic(i){if(gameActive&&gameScene&&document.getElementById("gameVerify").disabled)return;let x=cur()[i];sentence.push({...x});renderSentence();say(x.label);if(gameActive)gameFeedback.textContent=""}
 function renderSentence(){
- const el=document.querySelector("#sentence");el.innerHTML=sentence.length?sentence.map((x,i)=>`<div class="chip token" role="button" tabindex="0" draggable="${gameActive&&!document.getElementById('gameVerify').disabled}" ondragstart="gameDragStart(event,${i})" ondragover="event.preventDefault()" ondrop="gameDrop(event,${i})" onclick="speakSentenceItem(${i})"><img src="${x.image||img(x.id)}"><div>${esc(displayLabel(x.label))}</div><span class="token-action"></span></div>`).join(""):'<span class="small">Tocca i simboli per costruire la frase.</span>';
+ const el=document.querySelector("#sentence");el.innerHTML=sentence.length?sentence.map((x,i)=>`<div class="chip token" role="button" tabindex="0" draggable="${editMode}" ondragstart="gameDragStart(event,${i})" ondragover="event.preventDefault()" ondrop="gameDrop(event,${i})" onclick="speakSentenceItem(${i})"><img src="${x.image||img(x.id)}"><div>${esc(displayLabel(x.label))}</div>${editMode?`<span class="sentence-edit-actions"><button onclick="event.stopPropagation();moveToken(${i},-1)" aria-label="Sposta a sinistra" ${i===0?'disabled':''}>←</button><button onclick="event.stopPropagation();moveToken(${i},1)" aria-label="Sposta a destra" ${i===sentence.length-1?'disabled':''}>→</button><button onclick="event.stopPropagation();removeToken(${i})" aria-label="Elimina pittogramma dalla frase">✕</button></span>`:""}<span class="token-action"></span></div>`).join(""):'<span class="small">Tocca i simboli per costruire la frase.</span>';
 }
 let gameDragged=null;
-function gameDragStart(ev,i){if(!gameActive)return;gameDragged=i;ev.dataTransfer.effectAllowed="move"}
-function gameDrop(ev,i){ev.preventDefault();if(gameDragged===null||gameDragged===i)return;const x=sentence.splice(gameDragged,1)[0];sentence.splice(i,0,x);gameDragged=null;renderSentence()}
+function gameDragStart(ev,i){if(!editMode){ev.preventDefault();return;}gameDragged=i;ev.dataTransfer.effectAllowed="move"}
+function gameDrop(ev,i){ev.preventDefault();if(!editMode||gameDragged===null||gameDragged===i)return;const x=sentence.splice(gameDragged,1)[0];sentence.splice(i,0,x);gameDragged=null;renderSentence()}
 
 let lastSentenceTouch=0;
 function speakSentenceItem(i){
@@ -479,6 +490,7 @@ function toggleEditMode(){
  const b=document.getElementById("editModeBtn");
  if(b)b.textContent=editMode?"✓ FINE MODIFICA":"✎ MODIFICA";
  render();
+ renderSentence();
 }
 
 function deleteItem(i){
@@ -560,12 +572,27 @@ rate.value=localStorage.getItem("pcs2Rate")||"1";
 loadVoices();speechSynthesis.onvoiceschanged=loadVoices;
 
 
-updateCaseButton();render();renderSentence();const _pn=document.getElementById("profileName");if(_pn)_pn.value=profileName;if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
+updateCaseButton();render();renderSentence();const _pn=document.getElementById("profileName");if(_pn)_pn.value=profileName;
 
 // gioCAA: storage isolated from original PARLIAMO.
 let gameExercises=JSON.parse(localStorage.getItem("pcs2GameExercises")||"[]");
-let gameActive=false,gameScene=null,gameExpected=[],gameAttempts=0,gameGreen=0,gameRed=0,gameUsed=[];
+let gameActive=false,gameScene=null,gameExpected=[],gameAttempts=0,gameGreen=0,gameOrange=0,gameRed=0,gameUsed=[];
 let gameRunning=false,gameAdvanceTimer=null;
+let gameTurn=0,gamePending=[],gameAssisted=false,gameFiller=false,gameOrangeScenes=new Set();
+const repeatModeSelect=document.getElementById('gameRepeatMode');
+repeatModeSelect.value=localStorage.getItem('pcs2GameRepeatMode')==='delayed'?'delayed':'immediate';
+function saveGameRepeatMode(){localStorage.setItem('pcs2GameRepeatMode',repeatModeSelect.value)}
+function resetGameProgress(){
+ gameUsed=[];gameGreen=0;gameOrange=0;gameRed=0;gameTurn=0;
+ gamePending=[];gameAssisted=false;gameFiller=false;gameOrangeScenes=new Set();
+ renderGameAbacus();
+}
+function queueGameReview(assisted){
+ const key=getSceneKey(gameScene);
+ gamePending=gamePending.filter(x=>x.key!==key);
+ const delay=assisted&&repeatModeSelect.value==='immediate'?1:2;
+ gamePending.push({key,assisted,due:gameTurn+delay});
+}
 const gamePanel=document.getElementById("gamePanel"),gameFeedback=document.getElementById("gameFeedback");
 function normalizeGame(t){return String(t||"").toLocaleLowerCase("it-IT").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim()}
 function allGamePics(items=data.root,out=[]){for(const x of items){if(x.type==="folder")allGamePics(x.items||[],out);else out.push(x)}return out}
@@ -576,19 +603,20 @@ function toggleGame(){
  gameActive=!gameActive;
  gameRunning=false;
  document.body.classList.toggle("game-active",gameActive);
- document.body.classList.remove("game-running","game-solution-shown");
+ document.body.classList.remove("game-running","game-solution-shown","game-finished");
  gamePanel.hidden=!gameActive;
  const sceneEl=document.getElementById('sceneDisplay');
  const slot=document.getElementById('gameSceneSlot');
  if(gameActive && sceneEl && slot)slot.appendChild(sceneEl);
- if(!gameActive && sceneEl){const sentenceEl=document.getElementById('sentence');sentenceEl.parentNode.insertBefore(sceneEl,sentenceEl.nextSibling)}
+ if(!gameActive && sceneEl)document.querySelector('main').prepend(sceneEl);
  document.getElementById("gameToggle").innerHTML=gameActive?'<span class="game-exit">✕<small>ESCI</small></span>':'<img src="giocaa-logo.png" alt="gioCAA">';
- if(gameActive){sentence=[];gameScene=null;gameUsed=[];gameGreen=0;gameRed=0;renderSentence();gameFeedback.textContent="";renderGameExercises();renderGameAbacus();document.getElementById('gameVerify').disabled=true;document.getElementById('gameVerifyCompact').disabled=true}
+ if(gameActive){sentence=[];gameScene=null;resetGameProgress();renderSentence();gameFeedback.textContent="";renderGameExercises();renderGameAbacus();document.getElementById('gameVerify').disabled=true;document.getElementById('gameVerifyCompact').disabled=true}
  else{gameScene=null;closeScene();renderSentence()}
 }
 function finishGame(){
  gameRunning=false;gameScene=null;
  document.body.classList.remove('game-running','game-solution-shown');
+ document.body.classList.add('game-finished');
  document.getElementById('gameSolution').hidden=true;
  document.getElementById('gameVerify').disabled=true;document.getElementById('gameVerifyCompact').disabled=true;
  closeScene();sentence=[];renderSentence();
@@ -601,7 +629,7 @@ function getSceneKey(x){if(!x.gameKey)x.gameKey='g'+Date.now().toString(36)+Math
 function nextGame(){
  if(!gameActive)return;
  if(gameAdvanceTimer){clearTimeout(gameAdvanceTimer);gameAdvanceTimer=null}
- if(!gameRunning){gameRunning=true;gameUsed=[];gameGreen=0;gameRed=0;renderGameAbacus();document.body.classList.add('game-running')}
+ if(!gameRunning){gameRunning=true;resetGameProgress();document.body.classList.remove('game-finished');document.body.classList.add('game-running')}
  let pool=scenesData.filter(s=>s.gameEnabled);
  const chosen=document.getElementById('gameExercise').value;
  if(chosen!=='all'){
@@ -609,26 +637,77 @@ function nextGame(){
    if(exercise)pool=pool.filter(s=>exercise.sceneIds.includes(getSceneKey(s)));
  }
  if(!pool.length){finishGame();gameFeedback.textContent='Nessuna scena abilitata per questo esercizio.';return}
- const available=pool.filter(s=>!gameUsed.includes(getSceneKey(s)));
- if(!available.length){finishGame();return}
- // Prefer scenes that can be resolved without stopping the activity.
- const candidates=available.map(s=>({scene:s,result:resolveGame(s.label)}));
- const ready=candidates.filter(c=>!c.result.missing);
+ const ready=pool.map(scene=>({scene,result:resolveGame(scene.label)})).filter(x=>!x.result.missing);
  if(!ready.length){finishGame();gameFeedback.textContent='Mancano pittogrammi per le scene disponibili: controlla i nomi delle scene e dei pittogrammi.';return}
- const choice=ready[Math.floor(Math.random()*ready.length)];
- const x=choice.scene;
- gameUsed.push(getSceneKey(x));gameScene=x;gameExpected=choice.result.expected;
+ gamePending=gamePending.filter(q=>ready.some(x=>getSceneKey(x.scene)===q.key));
+ let review=gamePending.find(q=>q.due<=gameTurn+1);
+ const available=ready.filter(x=>!gameUsed.includes(getSceneKey(x.scene)));
+ // With a single scene, an assisted retry is still useful. An autonomous
+ // review must actually have a different sentence between presentations.
+ let choice=review?ready.find(x=>getSceneKey(x.scene)===review.key):available[Math.floor(Math.random()*available.length)];
+ gameFiller=false;
+ // Reuse another completed phrase when needed to space an orange review.
+ // Its correct response does not add another point for the same filler.
+ if(!choice&&gamePending.length){
+   choice=ready.find(x=>!gamePending.some(q=>q.key===getSceneKey(x.scene)));
+   gameFiller=Boolean(choice);
+ }
+ if(!choice){
+   review=gamePending.find(q=>q.assisted);
+   if(review)choice=ready.find(x=>getSceneKey(x.scene)===review.key);
+ }
+ if(!choice){finishGame();return}
+ if(review)gamePending=gamePending.filter(q=>q!==review);
+ gameAssisted=Boolean(review&&review.assisted);
+ const x=choice.scene,key=getSceneKey(x);
+ if(!gameUsed.includes(key))gameUsed.push(key);
+ gameTurn++;gameScene=x;gameExpected=choice.result.expected;
  gameAttempts=0;sentence=[];renderSentence();showScene(scenesData.indexOf(x));
- gameFeedback.textContent='';
+ gameFeedback.textContent=gameAssisted?'Riprova la frase dopo la soluzione.':review?'Ripasso: prova senza aiuti.':'';
  document.getElementById('gameSolution').hidden=true;
+ gamePanel.scrollTop=0;
  document.body.classList.remove('game-solution-shown');
  document.getElementById('gameVerify').disabled=false;document.getElementById('gameVerifyCompact').disabled=false;
 }
 
 function gameTokenId(x){return x.id?`id:${x.id}`:`image:${x.image||''}|${normalizeGame(x.label)}`}
-function renderGameAbacus(){for(const [id,n,color] of [["Green",gameGreen,"green"],["Red",gameRed,"red"]]){document.getElementById('game'+id+'Count').textContent=n;const rod=document.getElementById('game'+id+'Rod');rod.innerHTML=Array.from({length:Math.min(n,12)},()=>`<span class="abacus-ball ${color}"></span>`).join('');rod.title=n+' tentativi'}}
-function gameCheck(){if(!gameScene||document.getElementById('gameVerify').disabled)return;gameAttempts++;const expected=gameExpected.map(gameTokenId),actual=sentence.map(gameTokenId),correct=actual.length===expected.length&&actual.every((v,i)=>v===expected[i]);if(correct)gameGreen++;else gameRed++;renderGameAbacus();const counts=new Map();expected.forEach(v=>counts.set(v,(counts.get(v)||0)+1));const statuses=actual.map((v,i)=>{if(v===expected[i]){counts.set(v,counts.get(v)-1);return 'green'}return null});actual.forEach((v,i)=>{if(statuses[i])return;if((counts.get(v)||0)>0){statuses[i]='yellow';counts.set(v,counts.get(v)-1)}else statuses[i]='red'});document.querySelectorAll('#sentence .token').forEach((el,i)=>{const status=statuses[i];el.classList.remove('game-green','game-yellow','game-red');el.classList.add('game-'+status);const action=el.querySelector('.token-action');if(status==='green')action.innerHTML='<span class="token-status correct">✓</span>';if(status==='red')action.innerHTML=`<button class="token-status incorrect" onclick="event.stopPropagation();removeToken(${i})" aria-label="Elimina pittogramma">✕</button>`;if(status==='yellow')action.innerHTML=`<span class="token-status move" title="Sposta pittogramma">↔</span><div class="token-arrows"><button onclick="event.stopPropagation();moveToken(${i},-1)">◀</button><button onclick="event.stopPropagation();moveToken(${i},1)">▶</button></div>`});if(correct){gameFeedback.textContent='CORRETTO!';document.getElementById('gameVerify').disabled=true;document.getElementById('gameVerifyCompact').disabled=true;gameAdvanceTimer=setTimeout(()=>{gameAdvanceTimer=null;if(gameActive&&gameRunning)nextGame()},900)}else if(gameAttempts>=2){gameFeedback.textContent='Ecco la soluzione di gioCAA.';showGameSolution();document.body.classList.add('game-solution-shown');document.getElementById('gameVerify').disabled=true;document.getElementById('gameVerifyCompact').disabled=true}else{gameFeedback.textContent='Puoi correggere e riprovare.'}}
-function showGameSolution(){const box=document.getElementById('gameSolution'),tokens=document.getElementById('gameSolutionTokens');tokens.innerHTML=gameExpected.map((x,i)=>`<div class="game-solution-chip" id="gameSolutionChip${i}"><img src="${x.image||img(x.id)}" alt=""><b>${esc(displayLabel(x.label))}</b></div>`).join('');box.hidden=false}
+function renderGameAbacus(){for(const [id,n,color] of [["Green",gameGreen,"green"],["Orange",gameOrange,"orange"],["Red",gameRed,"red"]]){document.getElementById('game'+id+'Count').textContent=n;const rod=document.getElementById('game'+id+'Rod');rod.innerHTML=Array.from({length:Math.min(n,12)},()=>`<span class="abacus-ball ${color}"></span>`).join('');rod.title=n+' tentativi'}}
+function gameCheck(){
+ if(!gameScene||document.getElementById('gameVerify').disabled)return;
+ gameAttempts++;
+ const expected=gameExpected.map(gameTokenId),actual=sentence.map(gameTokenId);
+ const correct=actual.length===expected.length&&actual.every((v,i)=>v===expected[i]);
+ const key=getSceneKey(gameScene);
+ if(correct){
+   if(gameAssisted){
+     if(!gameOrangeScenes.has(key)){gameOrangeScenes.add(key);gameOrange++}
+     queueGameReview(false);
+   }else if(gameOrangeScenes.has(key)){
+     if(gameAttempts===1){gameOrangeScenes.delete(key);gameOrange--;gameGreen++}
+     else queueGameReview(false);
+   }else if(!gameFiller)gameGreen++;
+ }else gameRed++;
+ renderGameAbacus();
+ const counts=new Map();expected.forEach(v=>counts.set(v,(counts.get(v)||0)+1));
+ const statuses=actual.map((v,i)=>{if(v===expected[i]){counts.set(v,counts.get(v)-1);return 'green'}return null});
+ actual.forEach((v,i)=>{if(statuses[i])return;if((counts.get(v)||0)>0){statuses[i]='yellow';counts.set(v,counts.get(v)-1)}else statuses[i]='red'});
+ document.querySelectorAll('#sentence .token').forEach((el,i)=>{
+   const status=statuses[i];el.classList.remove('game-green','game-yellow','game-red');el.classList.add('game-'+status);
+   const symbol=status==='green'?'✓':status==='yellow'?'↔':'✕';
+   el.querySelector('.token-action').innerHTML=`<span class="token-status ${status==='green'?'correct':status==='yellow'?'move':'incorrect'}">${symbol}</span>`;
+ });
+ if(correct){
+   gameFeedback.textContent=gameAssisted?'CORRETTO CON AIUTO: punto arancione.':'CORRETTO!';
+   document.getElementById('gameVerify').disabled=true;document.getElementById('gameVerifyCompact').disabled=true;
+   gameAdvanceTimer=setTimeout(()=>{gameAdvanceTimer=null;if(gameActive&&gameRunning)nextGame()},900);
+ }else if(gameAttempts>=2){
+   queueGameReview(true);
+   gameFeedback.textContent='Guarda la soluzione, poi premi AVANTI per il ripasso.';
+   showGameSolution();document.body.classList.add('game-solution-shown');
+   document.getElementById('gameVerify').disabled=true;document.getElementById('gameVerifyCompact').disabled=true;
+ }else gameFeedback.textContent='Puoi correggere e riprovare.';
+}
+function showGameSolution(){const box=document.getElementById('gameSolution'),tokens=document.getElementById('gameSolutionTokens');tokens.innerHTML=gameExpected.map((x,i)=>`<div class="game-solution-chip" id="gameSolutionChip${i}"><img src="${x.image||img(x.id)}" alt=""><b>${esc(displayLabel(x.label))}</b></div>`).join('');box.hidden=false;gamePanel.scrollTop=0}
 function speakGameSolution(){if(!gameExpected.length)return;speechSynthesis.cancel();let index=0;function next(){document.querySelectorAll('.game-solution-chip').forEach(x=>x.classList.remove('speaking'));if(index>=gameExpected.length)return;const chip=document.getElementById('gameSolutionChip'+index);if(chip)chip.classList.add('speaking');const utter=new SpeechSynthesisUtterance(gameExpected[index].label);utter.lang='it-IT';const voice=voices.find(x=>x.name===voiceSelect.value);if(voice)utter.voice=voice;utter.rate=parseFloat(rate.value||'1');utter.onend=()=>{index++;next()};utter.onerror=()=>{index++;next()};speechSynthesis.speak(utter)}next()}
-function moveToken(i,dir){if(document.getElementById('gameVerify').disabled)return;const j=i+dir;if(j<0||j>=sentence.length)return;[sentence[i],sentence[j]]=[sentence[j],sentence[i]];renderSentence();gameFeedback.textContent=''}
-function removeToken(i){if(document.getElementById('gameVerify').disabled)return;sentence.splice(i,1);renderSentence()}
+function moveToken(i,dir){if(!editMode)return;const j=i+dir;if(j<0||j>=sentence.length)return;[sentence[i],sentence[j]]=[sentence[j],sentence[i]];renderSentence();gameFeedback.textContent=''}
+function removeToken(i){if(!editMode)return;sentence.splice(i,1);renderSentence()}

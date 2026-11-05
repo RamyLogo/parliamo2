@@ -593,3 +593,35 @@ body.game-running .game-panel .abacus-col b{white-space:normal;overflow-wrap:any
  body.game-running .game-panel .abacus-rod{height:62px!important}
  body.game-running .game-panel .abacus-ball{height:3px}
 }
+
+/* Scene names occupy their own full-width row, below image and controls. */
+#sceneDisplay .scene-content{
+ display:grid;
+ grid-template-columns:auto minmax(0,1fr);
+ align-items:center;
+ gap:8px;
+ min-width:0;
+}
+#sceneDisplay .scene-tools{
+ position:static;
+ display:flex;
+ flex-direction:column;
+ align-self:start;
+ gap:6px;
+}
+body:not(.game-active) #sceneDisplay .scene-content{padding-right:40px}
+#sceneDisplay #sceneDisplayImg{min-width:0;max-width:100%}
+#sceneDisplay #sceneDisplayLabel{
+ width:100%!important;
+ max-width:100%!important;
+ height:auto;
+ max-height:none;
+ padding:8px 0 2px!important;
+ margin:0!important;
+ white-space:normal;
+ overflow-wrap:anywhere;
+ word-break:normal;
+ overflow:visible;
+ text-overflow:clip;
+ line-height:1.35;
+}

@@ -94,11 +94,13 @@ body.game-running .game-panel{padding:5px!important;margin:4px!important}
 <main>
 <div id="sceneDisplay" class="scene-display" style="display:none">
 <button class="scene-close" onclick="closeScene()" aria-label="Chiudi scena">✕</button>
+<div class="scene-content">
 <div class="scene-tools">
 <button class="scene-tool" onclick="toggleSceneName(event)" aria-label="Mostra o nascondi nome"><img src="assets/embedded-3.png" alt=""></button>
 <button class="scene-tool" onclick="speakSceneName(event)" aria-label="Ascolta nome"><img src="assets/embedded-4.png" alt=""></button>
 </div>
 <img id="sceneDisplayImg" alt="">
+</div>
 <div id="sceneDisplayLabel" hidden></div>
 </div>
  <div class="toolbar"><button id="backBtn" onclick="goBack()" style="display:none">← Indietro</button>

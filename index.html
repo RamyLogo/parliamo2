@@ -76,6 +76,8 @@ body.game-running .game-panel{padding:5px!important;margin:4px!important}
   <button onclick="saveProfileName()">SALVA NOME PROFILO</button>
   <button onclick="exportProfile()">⇧ ESPORTA PROFILO</button>
   <button onclick="document.getElementById('profileImport').click()">⇩ IMPORTA PROFILO</button>
+  <button onclick="saveCurrentVersion()">SALVA VERSIONE ATTUALE</button>
+  <button onclick="showProfileHistory()">STORICO PROFILI</button>
   <input id="profileImport" type="file" accept=".json,.parliamo,application/json,application/octet-stream" style="display:none" onchange="importProfileFile(event)">
 </div>
 </div>

@@ -13,6 +13,31 @@ const seed=[{"type":"folder","label":"PERSONE","items":[{"type":"pic","label":"i
 let data=JSON.parse(localStorage.getItem("pcs2Data")||"null")||{root:seed}, path=["root"], sentence=[];
 const img=id=>`https://static.arasaac.org/pictograms/${id}/${id}_500.png`;
 function save(){localStorage.setItem("pcs2Data",JSON.stringify(data))}
+/* Default profile: loaded only when this browser has never saved its own profile.
+   The complete exported profile must be stored in default-profile.parliamo. */
+async function loadInitialProfile(){
+ if(localStorage.getItem("pcs2Data")!==null)return;
+ try{
+  const response=await fetch("./default-profile.parliamo",{cache:"no-cache"});
+  if(!response.ok)return;
+  const initial=await response.json();
+  if(!initial||!initial.data||!Array.isArray(initial.data.root))return;
+  // Recheck after the asynchronous fetch: a user may have started editing.
+  if(localStorage.getItem("pcs2Data")!==null)return;
+  const values={pcs2Data:JSON.stringify(initial.data),
+   pcs2Scenes:JSON.stringify(Array.isArray(initial.scenes)?initial.scenes:[]),
+   pcs2GameExercises:JSON.stringify(Array.isArray(initial.gameExercises)?initial.gameExercises:[]),
+   pcs2SceneFolders:JSON.stringify(Array.isArray(initial.sceneFolders)?initial.sceneFolders:[]),
+   pcs2ProfileName:String(initial.profileName||"UTENTE")};
+  for(const [key,value] of Object.entries(values))localStorage.setItem(key,value);
+  data=initial.data;scenesData=initial.scenes||[];gameExercises=initial.gameExercises||[];
+  profileName=String(initial.profileName||"UTENTE");
+  const input=document.getElementById("profileName");if(input)input.value=profileName;
+  path=["root"];render();renderSentence();renderGameExercises();
+ }catch(e){console.warn("Profilo iniziale non disponibile:",e)}
+}
+window.addEventListener("load",loadInitialProfile);
+
 function cur(){let a=data.root;for(let i=1;i<path.length;i++)a=a[path[i]].items;return a}
 
 let labelsUppercase=localStorage.getItem("pcs2LabelsUppercase")==="1";

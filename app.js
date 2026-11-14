@@ -308,33 +308,145 @@ function exportProfile(){
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
+
+const PROFILE_HISTORY_KEY="pcs2ProfileHistory";
+function profileSnapshot(){
+ return {app:"PARLIAMO",formatVersion:2,profileName,exportedAt:new Date().toISOString(),
+ data:JSON.parse(JSON.stringify(data)),scenes:JSON.parse(JSON.stringify(scenesData)),
+ gameExercises:JSON.parse(JSON.stringify(gameExercises)),sceneFolders:sceneFolderNames(),
+ voice:localStorage.getItem("pcs2Voice")||"",rate:localStorage.getItem("pcs2Rate")||"1"};
+}
+function validProfile(x){
+ return x&&["PARLIAMO","Parla con i simboli"].includes(x.app)&&x.data&&Array.isArray(x.data.root)&&
+ (x.scenes===undefined||Array.isArray(x.scenes))&&(x.gameExercises===undefined||Array.isArray(x.gameExercises))&&
+ (x.sceneFolders===undefined||Array.isArray(x.sceneFolders));
+}
+function profileHistory(){
+ try{const h=JSON.parse(localStorage.getItem(PROFILE_HISTORY_KEY)||"[]");return Array.isArray(h)?h:[]}
+ catch(e){return []}
+}
+function downloadProfileBackup(p,filename){
+ const blob=new Blob([JSON.stringify(p,null,2)],{type:"application/octet-stream"});
+ const url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+function preserveProfile(reason){
+ const history=profileHistory();
+ if(history.length>=5){
+  const oldest=history[history.length-1];
+  if(!confirm("Lo storico contiene già 5 versioni. Per continuare occorre esportare la più vecchia. Premi OK per scaricarla, oppure Annulla per interrompere."))return false;
+  downloadProfileBackup(oldest.profile,"PARLIAMO_backup_"+oldest.savedAt.replace(/[:.]/g,"-")+".parliamo");
+  if(!confirm("Verifica che il backup sia stato scaricato. Confermi di eliminare dallo storico la versione più vecchia e continuare?"))return false;
+ }
+ history.unshift({savedAt:new Date().toISOString(),reason,profile:profileSnapshot()});
+ history.length=Math.min(history.length,5);
+ try{localStorage.setItem(PROFILE_HISTORY_KEY,JSON.stringify(history));return true}
+ catch(e){alert("Spazio insufficiente per salvare la versione precedente. Esporta il profilo e libera spazio.");return false}
+}
+function saveCurrentVersion(){
+ saveProfileName();
+ if(preserveProfile("Salvataggio manuale"))alert("Versione salvata nello storico.");
+}
+function applyProfile(x){
+ if(!validProfile(x))throw Error("Profilo non valido");
+ const d=JSON.parse(JSON.stringify(x.data)),sc=JSON.parse(JSON.stringify(x.scenes||[]));
+ const ex=JSON.parse(JSON.stringify(x.gameExercises||[]));
+ const folders=Array.isArray(x.sceneFolders)?x.sceneFolders:[...new Set(sc.map(s=>s.folder).filter(Boolean))];
+ const name=String(x.profileName||"UTENTE");
+ const updates={pcs2Data:JSON.stringify(d),pcs2Scenes:JSON.stringify(sc),
+ pcs2GameExercises:JSON.stringify(ex),pcs2SceneFolders:JSON.stringify(folders),pcs2ProfileName:name};
+ if(x.voice!==undefined)updates.pcs2Voice=x.voice;
+ if(x.rate!==undefined)updates.pcs2Rate=x.rate;
+ const before={};for(const k of Object.keys(updates))before[k]=localStorage.getItem(k);
+ try{for(const [k,v] of Object.entries(updates))localStorage.setItem(k,v)}
+ catch(e){for(const [k,v] of Object.entries(before)){try{if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(_){}}throw e}
+ data=d;scenesData=sc;gameExercises=ex;profileName=name;
+ const pn=document.getElementById("profileName");if(pn)pn.value=name;
+ path=["root"];inScenes=false;scenesVisible=false;currentSceneFolder=null;
+ closeScene();render();renderSentence();renderGameExercises();
+}
+function showProfileHistory(){
+ const h=profileHistory();
+ if(!h.length){alert("Non ci sono ancora versioni salvate.");return}
+ const list=h.map((v,i)=>(i+1)+". "+(v.profile.profileName||"UTENTE")+" — "+new Date(v.savedAt).toLocaleString("it-IT")+" ("+v.reason+")").join("\n");
+ const selected=prompt("STORICO PROFILI\n\n"+list+"\n\nInserisci il numero da ripristinare, oppure Annulla:");
+ if(selected===null||!selected.trim())return;
+ const n=Number(selected.trim());
+ if(!Number.isInteger(n)||n<1||n>h.length){alert("Numero non valido.");return}
+ if(!validProfile(h[n-1].profile)){alert("La versione scelta non è valida.");return}
+ if(!confirm("Ripristinare questa versione? La versione attuale verrà salvata nello storico."))return;
+ if(!preserveProfile("Prima del ripristino"))return;
+ try{applyProfile(h[n-1].profile);alert("Versione ripristinata.")}
+ catch(e){alert("Ripristino non riuscito: "+e.message)}
+}
+function mergeProfile(current,incoming){
+ const result=JSON.parse(JSON.stringify(current));
+ const norm=s=>String(s||"").trim().toLocaleLowerCase("it-IT");
+ function mergeItems(target,source){
+  for(const item of source){
+   if(!item||!["folder","pic"].includes(item.type))continue;
+   if(item.type==="folder"){
+    const match=target.find(x=>x.type==="folder"&&norm(x.label)===norm(item.label));
+    if(match){
+     if(!match.image&&item.image)match.image=item.image;
+     mergeItems(match.items||(match.items=[]),item.items||[]);
+    }else target.push(JSON.parse(JSON.stringify(item)));
+   }else{
+    const duplicate=target.some(x=>x.type==="pic"&&norm(x.label)===norm(item.label)&&
+      ((x.id&&item.id&&String(x.id)===String(item.id))||(x.image&&item.image&&x.image===item.image)));
+    if(!duplicate)target.push(JSON.parse(JSON.stringify(item)));
+   }
+  }
+ }
+ mergeItems(result.data.root,incoming.data.root);
+ const signature=s=>norm(s.label)+"|"+(s.image||s.id||"")+"|"+norm(s.folder);
+ const existing=new Map(result.scenes.map(s=>[signature(s),s]));
+ const keys=new Set(result.scenes.map(s=>s.gameKey).filter(Boolean));
+ const remap=new Map();
+ for(const scene of incoming.scenes||[]){
+  const match=existing.get(signature(scene));
+  if(match){if(scene.gameEnabled)match.gameEnabled=true;if(scene.gameKey&&match.gameKey)remap.set(scene.gameKey,match.gameKey);continue}
+  const copy=JSON.parse(JSON.stringify(scene));
+  if(copy.gameKey&&keys.has(copy.gameKey)){
+   let key;do{key="g"+Math.random().toString(36).slice(2,12)}while(keys.has(key));
+   remap.set(copy.gameKey,key);copy.gameKey=key;
+  }
+  if(copy.gameKey)keys.add(copy.gameKey);
+  result.scenes.push(copy);existing.set(signature(copy),copy);
+ }
+ result.sceneFolders=[...new Set([...(result.sceneFolders||[]),...(incoming.sceneFolders||[]),...result.scenes.map(s=>s.folder).filter(Boolean)])];
+ const titles=new Set(result.gameExercises.map(e=>norm(e.title)));
+ for(const exercise of incoming.gameExercises||[]){
+  const copy=JSON.parse(JSON.stringify(exercise));
+  copy.sceneIds=(copy.sceneIds||[]).map(id=>remap.get(id)||id).filter(id=>result.scenes.some(s=>s.gameKey===id));
+  if(titles.has(norm(copy.title)))copy.title=(copy.title||"Esercizio")+" (importato)";
+  while(titles.has(norm(copy.title)))copy.title+=" (2)";
+  titles.add(norm(copy.title));result.gameExercises.push(copy);
+ }
+ return result;
+}
 function importProfileFile(ev){
- const file=ev.target.files&&ev.target.files[0];
- if(!file)return;
- const r=new FileReader();
- r.onload=()=>{
-   try{
-     const x=JSON.parse(r.result);
-     if(!x || (x.app!=="Parla con i simboli" && x.app!=="PARLIAMO") || !x.data)throw new Error();
-     data=x.data;
-     scenesData=Array.isArray(x.scenes)?x.scenes:[];
-     gameExercises=Array.isArray(x.gameExercises)?x.gameExercises:[];localStorage.setItem("pcs2GameExercises",JSON.stringify(gameExercises));
-     saveSceneFolders(Array.isArray(x.sceneFolders)?x.sceneFolders:[...new Set(scenesData.map(s=>s.folder).filter(Boolean))]);
-     profileName=x.profileName||"UTENTE";
-     localStorage.setItem("pcs2Data",JSON.stringify(data));
-     localStorage.setItem("pcs2Scenes",JSON.stringify(scenesData));
-     localStorage.setItem("pcs2ProfileName",profileName);
-     if(x.voice!==undefined)localStorage.setItem("pcs2Voice",x.voice);
-     if(x.rate!==undefined)localStorage.setItem("pcs2Rate",x.rate);
-     const pn=document.getElementById("profileName");if(pn)pn.value=profileName;
-     path=["root"]; inScenes=false; scenesVisible=false; closeScene(); render(); renderSentence();
-     let msg="Profilo "+profileName+" importato.";
-     if(x.exportedAt){const d=new Date(x.exportedAt);if(!isNaN(d))msg+="\nEsportato il "+d.toLocaleDateString("it-IT")+" alle "+d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});}
-     alert(msg);
-   }catch(e){alert("Il file non è un profilo valido.");}
-   ev.target.value="";
+ const file=ev.target.files&&ev.target.files[0];if(!file)return;
+ const reader=new FileReader();
+ reader.onload=()=>{
+  try{
+   const incoming=JSON.parse(reader.result);
+   if(!validProfile(incoming))throw Error("Il file non è un profilo valido.");
+   const option=prompt("IMPORTA PROFILO\n\n1 = SOSTITUISCI il profilo attuale\n2 = FONDI i contenuti con quelli attuali\n\nScrivi 1 o 2:","2");
+   if(option===null)return;
+   if(!["1","2"].includes(option.trim())){alert("Scegli 1 oppure 2.");return}
+   const replace=option.trim()==="1";
+   if(!confirm(replace?"Sostituire il profilo attuale? Prima sarà salvato nello storico.":"Fondere i profili? Le cartelle omonime saranno unite e i pittogrammi identici non duplicati. Prima sarà salvato il profilo attuale."))return;
+   const target=replace?incoming:mergeProfile(profileSnapshot(),incoming);
+   if(!preserveProfile(replace?"Prima della sostituzione":"Prima della fusione"))return;
+   applyProfile(target);
+   alert(replace?"Profilo sostituito. La versione precedente è nello storico.":"Profili fusi. La versione precedente è nello storico.");
+  }catch(e){alert("Importazione non riuscita: "+(e.message||"errore sconosciuto"))}
+  finally{ev.target.value=""}
  };
- r.readAsText(file);
+ reader.onerror=()=>{alert("Impossibile leggere il file.");ev.target.value=""};
+ reader.readAsText(file);
 }
 
 function openSceneAddMenu(){
